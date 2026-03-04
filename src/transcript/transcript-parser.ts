@@ -9,6 +9,11 @@
  * with YouTube Data API v3 as fallback for captions and metadata.
  */
 
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { YoutubeTranscript } from "youtube-transcript";
 import type {
   TranscriptSegment,
@@ -16,6 +21,78 @@ import type {
   Logger,
 } from "../types.js";
 import { defaultLogger } from "../types.js";
+
+const execFileAsync = promisify(execFile);
+
+// Resolve path to Python transcript bridge script
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PYTHON_BRIDGE = resolve(__dirname, "../../scripts/fetch-transcript.py");
+
+// Python interpreters to try (in order)
+const PYTHON_PATHS = [
+  process.env.PYTHON_PATH,
+  resolve(process.env.HOME || "", "nanobot-env/bin/python"),
+  "python3",
+  "python",
+].filter(Boolean) as string[];
+
+/**
+ * Fetch transcript via Python youtube-transcript-api bridge.
+ * Most reliable method — handles YouTube's latest anti-scraping.
+ */
+async function fetchTranscriptViaPython(
+  videoId: string,
+  lang: string,
+  log: Logger,
+): Promise<{ segments: TranscriptSegment[]; fullText: string } | null> {
+  if (!existsSync(PYTHON_BRIDGE)) {
+    log.info("Python bridge script not found, skipping", { path: PYTHON_BRIDGE });
+    return null;
+  }
+
+  for (const pythonPath of PYTHON_PATHS) {
+    try {
+      const { stdout } = await execFileAsync(
+        pythonPath!,
+        [PYTHON_BRIDGE, videoId, "--lang", lang],
+        { timeout: 30_000, maxBuffer: 10 * 1024 * 1024 },
+      );
+
+      const data = JSON.parse(stdout) as {
+        error?: string;
+        videoId: string;
+        segments: Array<{ start: number; duration: number; text: string }>;
+        fullText: string;
+        segmentCount: number;
+      };
+
+      if (data.error) {
+        log.info("Python bridge returned error", { error: data.error });
+        return null;
+      }
+
+      const segments: TranscriptSegment[] = data.segments.map((seg) => ({
+        timestamp: formatSeconds(seg.start),
+        start: seg.start,
+        duration: seg.duration,
+        text: seg.text.replace(/\[.*?\]/g, "").trim(),
+      }));
+
+      log.info("Successfully fetched transcript via Python bridge", {
+        segmentCount: segments.length,
+        textLength: data.fullText.length,
+      });
+
+      return { segments, fullText: data.fullText };
+    } catch (error) {
+      // Try next Python path
+      continue;
+    }
+  }
+
+  log.info("Python bridge failed with all interpreters");
+  return null;
+}
 
 // ============================================================================
 // YOUTUBE ID EXTRACTION (replaces @/lib/utils extractYouTubeId)
@@ -200,12 +277,27 @@ export async function parseTranscript(
     throw new Error("Invalid YouTube URL");
   }
 
-  // Strategy 1: youtube-transcript package
+  const lang = options.languages?.[0] ?? "en";
+
+  // Strategy 1: Python youtube-transcript-api bridge (most reliable)
+  try {
+    log.info("Fetching transcript via Python bridge", { videoId });
+    const result = await fetchTranscriptViaPython(videoId, lang, log);
+    if (result && result.segments.length > 0) {
+      return { videoId, ...result };
+    }
+  } catch (error) {
+    log.info("Python bridge failed, trying npm fallback", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  // Strategy 2: youtube-transcript npm package (fast but often broken)
   try {
     log.info("Fetching transcript via youtube-transcript package", { videoId });
 
     const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId, {
-      lang: options.languages?.[0] ?? "en",
+      lang,
     });
 
     if (transcriptItems && transcriptItems.length > 0) {
@@ -213,12 +305,12 @@ export async function parseTranscript(
         timestamp: formatSeconds(item.offset / 1000),
         start: item.offset / 1000,
         duration: item.duration / 1000,
-        text: item.text.replace(/\[.*?\]/g, "").trim(), // Remove [Music], [Applause], etc.
+        text: item.text.replace(/\[.*?\]/g, "").trim(),
       }));
 
       const fullText = segments.map((s) => s.text).join(" ");
 
-      log.info("Successfully fetched transcript", {
+      log.info("Successfully fetched transcript via npm package", {
         segmentCount: segments.length,
         textLength: fullText.length,
       });
@@ -226,12 +318,12 @@ export async function parseTranscript(
       return { videoId, segments, fullText };
     }
   } catch (error) {
-    log.info("youtube-transcript package failed, trying fallback", {
+    log.info("youtube-transcript package failed, trying API fallback", {
       error: error instanceof Error ? error.message : String(error),
     });
   }
 
-  // Strategy 2: YouTube Data API v3 captions (requires API key)
+  // Strategy 3: YouTube Data API v3 captions (requires API key)
   if (options.youtubeApiKey) {
     try {
       const segments = await fetchTranscriptViaYouTubeAPI(

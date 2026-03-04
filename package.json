@@ -1,10 +1,10 @@
 {
   "name": "video-commerce-mcp",
-  "version": "0.1.0",
-  "description": "Video Commerce Intelligence MCP Server - Extract commercial entities, score monetization, and discover market gaps from YouTube videos",
+  "version": "0.2.0",
+  "description": "Video Commerce Intelligence MCP Server - Extract commercial entities, score monetization, and discover market gaps from YouTube videos. Built for the agent-to-agent economy.",
   "type": "module",
   "license": "MIT",
-  "author": "MyGardenShows",
+  "author": "Since Today Studio <team@sincetoday.com>",
   "repository": {
     "type": "git",
     "url": "https://github.com/MyGardenShows/video-commerce-mcp.git"
@@ -30,7 +30,11 @@
     "ai-agent",
     "content-intelligence",
     "creator-tools",
-    "affiliate-marketing"
+    "affiliate-marketing",
+    "agent-to-agent",
+    "a2a",
+    "claude",
+    "market-intelligence"
   ],
   "engines": {
     "node": ">=20.0.0"
@@ -53,6 +57,7 @@
   "files": [
     "dist",
     "data",
+    "scripts",
     "README.md",
     "LICENSE",
     ".env.example"

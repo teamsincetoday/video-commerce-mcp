@@ -14,7 +14,9 @@ npx video-commerce-mcp
 npx video-commerce-mcp --transport sse --port 3001
 ```
 
-**Requires:** `OPENAI_API_KEY` environment variable (GPT-4o-mini for entity extraction).
+**Requires:**
+- `OPENAI_API_KEY` environment variable (GPT-4o-mini for entity extraction)
+- **Optional:** Python 3 with `youtube-transcript-api` (`pip install youtube-transcript-api`) for reliable transcript fetching. Falls back to npm-based fetching if not available.
 
 ## Add to Claude Desktop
 
