@@ -1,0 +1,68 @@
+{
+  "_comment": "Example MCP configuration snippets for Video Commerce Intelligence MCP. Copy the relevant section into your MCP client configuration.",
+
+  "claude_desktop": {
+    "_file": "~/Library/Application Support/Claude/claude_desktop_config.json (macOS) or %APPDATA%/Claude/claude_desktop_config.json (Windows)",
+    "mcpServers": {
+      "video-commerce": {
+        "command": "npx",
+        "args": ["video-commerce-mcp"],
+        "env": {
+          "OPENAI_API_KEY": "your-openai-api-key"
+        }
+      }
+    }
+  },
+
+  "claude_code_local": {
+    "_file": ".claude/mcp.json in your project root",
+    "mcpServers": {
+      "video-commerce": {
+        "command": "npx",
+        "args": ["video-commerce-mcp"],
+        "env": {
+          "OPENAI_API_KEY": "your-openai-api-key"
+        }
+      }
+    }
+  },
+
+  "claude_code_remote_sse": {
+    "_file": ".claude/mcp.json in your project root",
+    "mcpServers": {
+      "video-commerce": {
+        "type": "sse",
+        "url": "https://your-deployed-server.example.com/sse"
+      }
+    }
+  },
+
+  "with_x402_payments": {
+    "_file": "Any MCP client config",
+    "mcpServers": {
+      "video-commerce": {
+        "command": "npx",
+        "args": ["video-commerce-mcp"],
+        "env": {
+          "OPENAI_API_KEY": "your-openai-api-key",
+          "X402_ENABLED": "true",
+          "X402_WALLET_ADDRESS": "0x-your-wallet-address"
+        }
+      }
+    }
+  },
+
+  "with_api_keys": {
+    "_file": "Any MCP client config",
+    "mcpServers": {
+      "video-commerce": {
+        "command": "npx",
+        "args": ["video-commerce-mcp"],
+        "env": {
+          "OPENAI_API_KEY": "your-openai-api-key",
+          "API_KEYS": "client-key-1,client-key-2"
+        }
+      }
+    }
+  }
+}

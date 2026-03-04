@@ -1,0 +1,22 @@
+# Railway deployment configuration for Video Commerce Intelligence MCP Server
+#
+# Deploy:
+#   1. Connect your GitHub repo to Railway
+#   2. Set the root directory to packages/video-commerce-mcp
+#   3. Railway will auto-detect the Dockerfile
+#
+# Environment variables to set in Railway dashboard:
+#   OPENAI_API_KEY       (required)
+#   X402_ENABLED         (optional, default: false)
+#   X402_WALLET_ADDRESS  (optional, required if X402_ENABLED=true)
+#   API_KEYS             (optional, comma-separated)
+#   PORT                 (Railway sets this automatically)
+
+[build]
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 5
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

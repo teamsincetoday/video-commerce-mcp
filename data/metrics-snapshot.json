@@ -1,0 +1,42 @@
+{
+  "exportedAt": "2026-03-04T20:39:03.024Z",
+  "cache": {
+    "totalEntries": 0,
+    "totalSizeBytes": 0,
+    "hitRate": 0,
+    "hits": 0,
+    "misses": 0,
+    "expiredEntries": 0,
+    "oldestEntry": null,
+    "newestEntry": null
+  },
+  "usage": {
+    "day": {
+      "totalCalls": 0,
+      "totalRevenue": 0,
+      "uniqueAgents": 0,
+      "callsByTool": {},
+      "avgProcessingTime": 0
+    },
+    "week": {
+      "totalCalls": 0,
+      "totalRevenue": 0,
+      "uniqueAgents": 0,
+      "callsByTool": {},
+      "avgProcessingTime": 0
+    },
+    "month": {
+      "totalCalls": 0,
+      "totalRevenue": 0,
+      "uniqueAgents": 0,
+      "callsByTool": {},
+      "avgProcessingTime": 0
+    }
+  },
+  "budget": {
+    "services": [],
+    "emergencyStop": {
+      "stop": false
+    }
+  }
+}

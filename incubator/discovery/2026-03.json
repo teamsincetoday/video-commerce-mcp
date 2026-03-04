@@ -1,0 +1,499 @@
+{
+  "date": "2026-03-04",
+  "timestamp": "2026-03-04T20:39:39.340Z",
+  "currentMCPPerformance": {
+    "videoCommerceMcp": {
+      "totalCallsMonth": 0,
+      "revenueMonth": 0,
+      "uniqueAgents": 0,
+      "topTools": []
+    }
+  },
+  "opportunities": [
+    {
+      "name": "podcast-commerce-mcp",
+      "tagline": "Extract product mentions and recommendations from podcasts",
+      "vertical": "podcasts",
+      "problem": "Podcasts mention products constantly but there's no structured way for agents to extract and monetize these mentions. Podcast transcripts are long and noisy.",
+      "solution": "Long-form transcript processing optimized for conversational content. Speaker attribution. Product mention extraction with sentiment and recommendation strength.",
+      "targetAgents": [
+        "Podcast summary agents",
+        "Product recommendation engines",
+        "Affiliate marketing platforms",
+        "Content curation tools"
+      ],
+      "score": {
+        "tam": 12000,
+        "defensibility": 0.7,
+        "agentDemand": 0.8,
+        "buildComplexity": 6,
+        "composite": 1120
+      },
+      "tractionWindow": {
+        "startDate": "2026-03-04",
+        "endDate": "2026-03-18",
+        "successMetrics": [
+          ">40 tool calls in first week",
+          ">5 unique agents",
+          "Cross-category product extraction working"
+        ]
+      },
+      "promotion": {
+        "channels": [
+          {
+            "name": "MCP Hub (mcp.so)",
+            "url": "https://mcp.so",
+            "type": "directory",
+            "audienceSize": "Growing — primary MCP discovery",
+            "priority": "must",
+            "notes": "Submit via their listing form. Include clear tool descriptions."
+          },
+          {
+            "name": "Smithery.ai",
+            "url": "https://smithery.ai",
+            "type": "marketplace",
+            "audienceSize": "Active agent developer community",
+            "priority": "must",
+            "notes": "Marketplace for MCP servers. Good discovery from Claude users."
+          },
+          {
+            "name": "npm Registry",
+            "url": "https://www.npmjs.com",
+            "type": "registry",
+            "audienceSize": "Massive — standard JS ecosystem",
+            "priority": "must",
+            "notes": "npm publish. Good keywords, README with examples."
+          },
+          {
+            "name": "GitHub MCP Servers List",
+            "url": "https://github.com/modelcontextprotocol/servers",
+            "type": "directory",
+            "audienceSize": "Official MCP ecosystem",
+            "priority": "must",
+            "notes": "Submit PR to add to official servers list."
+          },
+          {
+            "name": "Glama.ai",
+            "url": "https://glama.ai/mcp/servers",
+            "type": "directory",
+            "audienceSize": "MCP server discovery",
+            "priority": "should",
+            "notes": "Another MCP directory. Submit for listing."
+          },
+          {
+            "name": "Reddit r/ClaudeAI",
+            "url": "https://reddit.com/r/ClaudeAI",
+            "type": "community",
+            "audienceSize": "Large — 100k+ Claude users",
+            "priority": "should",
+            "notes": "Share as a useful tool post, not marketing. Show real examples."
+          },
+          {
+            "name": "Hacker News",
+            "url": "https://news.ycombinator.com",
+            "type": "community",
+            "audienceSize": "Massive — developer audience",
+            "priority": "could",
+            "notes": "Show HN post. Needs genuine technical value."
+          },
+          {
+            "name": "X/Twitter #MCP",
+            "url": "https://x.com",
+            "type": "community",
+            "audienceSize": "Large AI developer audience",
+            "priority": "should",
+            "notes": "Thread showing what the MCP does with concrete examples."
+          },
+          {
+            "name": "Discord — Anthropic Community",
+            "url": "https://discord.gg/anthropic",
+            "type": "community",
+            "audienceSize": "Active Claude developer community",
+            "priority": "should",
+            "notes": "Share in appropriate channel. Engage with feedback."
+          }
+        ],
+        "launchStrategy": "Broad launch — podcasts cross all verticals. Target podcast analytics companies, recommendation engine builders. Show HN potential."
+      },
+      "moat": "Speaker attribution + sentiment analysis on recommendations is hard to replicate. Long-form processing expertise transfers from video-commerce-mcp.",
+      "mvpScope": [
+        "YouTube podcast transcript extraction",
+        "Speaker diarization (basic)",
+        "Product mention detection with context",
+        "Recommendation sentiment scoring",
+        "Multi-category entity extraction",
+        "Episode comparison and trending products"
+      ],
+      "estimatedBuildDays": 14,
+      "status": "researched"
+    },
+    {
+      "name": "course-commerce-mcp",
+      "tagline": "Extract learning paths and resources from educational videos",
+      "vertical": "education",
+      "problem": "Educational videos reference books, tools, courses, and resources that viewers want to buy. No agent can extract structured learning paths from video content.",
+      "solution": "Extract educational resources (books, courses, tools, software), build skill dependency graphs, match to purchasable resources. Score learning path completeness.",
+      "targetAgents": [
+        "Learning management agents",
+        "Study planning assistants",
+        "Resource curation tools",
+        "EdTech platforms"
+      ],
+      "score": {
+        "tam": 15000,
+        "defensibility": 0.8,
+        "agentDemand": 0.5,
+        "buildComplexity": 7,
+        "composite": 857.1428571428571
+      },
+      "tractionWindow": {
+        "startDate": "2026-03-04",
+        "endDate": "2026-03-18",
+        "successMetrics": [
+          ">25 tool calls in first week",
+          "Skill graph generation working",
+          "Resource matching accuracy >70%"
+        ]
+      },
+      "promotion": {
+        "channels": [
+          {
+            "name": "MCP Hub (mcp.so)",
+            "url": "https://mcp.so",
+            "type": "directory",
+            "audienceSize": "Growing — primary MCP discovery",
+            "priority": "must",
+            "notes": "Submit via their listing form. Include clear tool descriptions."
+          },
+          {
+            "name": "Smithery.ai",
+            "url": "https://smithery.ai",
+            "type": "marketplace",
+            "audienceSize": "Active agent developer community",
+            "priority": "must",
+            "notes": "Marketplace for MCP servers. Good discovery from Claude users."
+          },
+          {
+            "name": "npm Registry",
+            "url": "https://www.npmjs.com",
+            "type": "registry",
+            "audienceSize": "Massive — standard JS ecosystem",
+            "priority": "must",
+            "notes": "npm publish. Good keywords, README with examples."
+          },
+          {
+            "name": "GitHub MCP Servers List",
+            "url": "https://github.com/modelcontextprotocol/servers",
+            "type": "directory",
+            "audienceSize": "Official MCP ecosystem",
+            "priority": "must",
+            "notes": "Submit PR to add to official servers list."
+          },
+          {
+            "name": "Glama.ai",
+            "url": "https://glama.ai/mcp/servers",
+            "type": "directory",
+            "audienceSize": "MCP server discovery",
+            "priority": "should",
+            "notes": "Another MCP directory. Submit for listing."
+          },
+          {
+            "name": "Reddit r/ClaudeAI",
+            "url": "https://reddit.com/r/ClaudeAI",
+            "type": "community",
+            "audienceSize": "Large — 100k+ Claude users",
+            "priority": "should",
+            "notes": "Share as a useful tool post, not marketing. Show real examples."
+          },
+          {
+            "name": "Hacker News",
+            "url": "https://news.ycombinator.com",
+            "type": "community",
+            "audienceSize": "Massive — developer audience",
+            "priority": "could",
+            "notes": "Show HN post. Needs genuine technical value."
+          },
+          {
+            "name": "X/Twitter #MCP",
+            "url": "https://x.com",
+            "type": "community",
+            "audienceSize": "Large AI developer audience",
+            "priority": "should",
+            "notes": "Thread showing what the MCP does with concrete examples."
+          },
+          {
+            "name": "Discord — Anthropic Community",
+            "url": "https://discord.gg/anthropic",
+            "type": "community",
+            "audienceSize": "Active Claude developer community",
+            "priority": "should",
+            "notes": "Share in appropriate channel. Engage with feedback."
+          }
+        ],
+        "launchStrategy": "Target EdTech developers and learning platform builders. Academic Twitter/X. Developer education communities."
+      },
+      "moat": "Skill dependency graphs and learning path optimization create strong data moat. Hard to replicate without significant training data.",
+      "mvpScope": [
+        "Educational video transcript extraction",
+        "Resource NER (books, courses, tools, software)",
+        "Skill and concept extraction",
+        "Learning path sequencing",
+        "Resource-to-product matching",
+        "Prerequisite detection"
+      ],
+      "estimatedBuildDays": 14,
+      "status": "researched"
+    },
+    {
+      "name": "recipe-commerce-mcp",
+      "tagline": "Turn cooking videos into shoppable ingredient lists",
+      "vertical": "cooking",
+      "problem": "Cooking video viewers can't easily buy exact ingredients shown. Recipe extraction is poor, ingredient-to-product matching doesn't exist for agents.",
+      "solution": "Extract recipes, match to grocery/specialty products, score affiliate opportunities. Same pipeline architecture as video-commerce-mcp adapted for food.",
+      "targetAgents": [
+        "Meal planning agents",
+        "Grocery shopping assistants",
+        "Recipe aggregators",
+        "Content creator tools"
+      ],
+      "score": {
+        "tam": 5000,
+        "defensibility": 0.6,
+        "agentDemand": 0.7,
+        "buildComplexity": 4,
+        "composite": 525
+      },
+      "tractionWindow": {
+        "startDate": "2026-03-04",
+        "endDate": "2026-03-18",
+        "successMetrics": [
+          ">50 tool calls in first week",
+          ">5 unique agents",
+          ">0 revenue from x402"
+        ]
+      },
+      "promotion": {
+        "channels": [
+          {
+            "name": "MCP Hub (mcp.so)",
+            "url": "https://mcp.so",
+            "type": "directory",
+            "audienceSize": "Growing — primary MCP discovery",
+            "priority": "must",
+            "notes": "Submit via their listing form. Include clear tool descriptions."
+          },
+          {
+            "name": "Smithery.ai",
+            "url": "https://smithery.ai",
+            "type": "marketplace",
+            "audienceSize": "Active agent developer community",
+            "priority": "must",
+            "notes": "Marketplace for MCP servers. Good discovery from Claude users."
+          },
+          {
+            "name": "npm Registry",
+            "url": "https://www.npmjs.com",
+            "type": "registry",
+            "audienceSize": "Massive — standard JS ecosystem",
+            "priority": "must",
+            "notes": "npm publish. Good keywords, README with examples."
+          },
+          {
+            "name": "GitHub MCP Servers List",
+            "url": "https://github.com/modelcontextprotocol/servers",
+            "type": "directory",
+            "audienceSize": "Official MCP ecosystem",
+            "priority": "must",
+            "notes": "Submit PR to add to official servers list."
+          },
+          {
+            "name": "Glama.ai",
+            "url": "https://glama.ai/mcp/servers",
+            "type": "directory",
+            "audienceSize": "MCP server discovery",
+            "priority": "should",
+            "notes": "Another MCP directory. Submit for listing."
+          },
+          {
+            "name": "Reddit r/ClaudeAI",
+            "url": "https://reddit.com/r/ClaudeAI",
+            "type": "community",
+            "audienceSize": "Large — 100k+ Claude users",
+            "priority": "should",
+            "notes": "Share as a useful tool post, not marketing. Show real examples."
+          },
+          {
+            "name": "X/Twitter #MCP",
+            "url": "https://x.com",
+            "type": "community",
+            "audienceSize": "Large AI developer audience",
+            "priority": "should",
+            "notes": "Thread showing what the MCP does with concrete examples."
+          },
+          {
+            "name": "Discord — Anthropic Community",
+            "url": "https://discord.gg/anthropic",
+            "type": "community",
+            "audienceSize": "Active Claude developer community",
+            "priority": "should",
+            "notes": "Share in appropriate channel. Engage with feedback."
+          }
+        ],
+        "launchStrategy": "Launch on npm + MCP directories first week. Reddit/Twitter demos week 2. Target meal planning and grocery agent developers."
+      },
+      "moat": "Recipe NER with ingredient-to-product matching builds data advantage. Cross-sell with video-commerce-mcp for multi-vertical creators.",
+      "mvpScope": [
+        "YouTube recipe video transcript extraction",
+        "Ingredient NER with quantities",
+        "Product matching to major grocery categories",
+        "Affiliate link generation for specialty ingredients",
+        "Nutritional data enrichment"
+      ],
+      "estimatedBuildDays": 10,
+      "status": "researched"
+    },
+    {
+      "name": "diy-commerce-mcp",
+      "tagline": "Extract tools, materials, and supply lists from DIY videos",
+      "vertical": "diy",
+      "problem": "DIY/home improvement video viewers need specific tools and materials but can't easily get shopping lists. Hardware affiliate programs are underserved.",
+      "solution": "Extract tools, materials, measurements from DIY transcripts. Match to hardware store products. Score project complexity and cost estimates.",
+      "targetAgents": [
+        "Home improvement planners",
+        "Project cost estimators",
+        "Hardware shopping assistants",
+        "Content creator monetization tools"
+      ],
+      "score": {
+        "tam": 8000,
+        "defensibility": 0.5,
+        "agentDemand": 0.6,
+        "buildComplexity": 5,
+        "composite": 480
+      },
+      "tractionWindow": {
+        "startDate": "2026-03-04",
+        "endDate": "2026-03-18",
+        "successMetrics": [
+          ">30 tool calls in first week",
+          ">3 unique agents",
+          "Positive community feedback"
+        ]
+      },
+      "promotion": {
+        "channels": [
+          {
+            "name": "MCP Hub (mcp.so)",
+            "url": "https://mcp.so",
+            "type": "directory",
+            "audienceSize": "Growing — primary MCP discovery",
+            "priority": "must",
+            "notes": "Submit via their listing form. Include clear tool descriptions."
+          },
+          {
+            "name": "Smithery.ai",
+            "url": "https://smithery.ai",
+            "type": "marketplace",
+            "audienceSize": "Active agent developer community",
+            "priority": "must",
+            "notes": "Marketplace for MCP servers. Good discovery from Claude users."
+          },
+          {
+            "name": "npm Registry",
+            "url": "https://www.npmjs.com",
+            "type": "registry",
+            "audienceSize": "Massive — standard JS ecosystem",
+            "priority": "must",
+            "notes": "npm publish. Good keywords, README with examples."
+          },
+          {
+            "name": "GitHub MCP Servers List",
+            "url": "https://github.com/modelcontextprotocol/servers",
+            "type": "directory",
+            "audienceSize": "Official MCP ecosystem",
+            "priority": "must",
+            "notes": "Submit PR to add to official servers list."
+          },
+          {
+            "name": "Glama.ai",
+            "url": "https://glama.ai/mcp/servers",
+            "type": "directory",
+            "audienceSize": "MCP server discovery",
+            "priority": "should",
+            "notes": "Another MCP directory. Submit for listing."
+          },
+          {
+            "name": "Reddit r/ClaudeAI",
+            "url": "https://reddit.com/r/ClaudeAI",
+            "type": "community",
+            "audienceSize": "Large — 100k+ Claude users",
+            "priority": "should",
+            "notes": "Share as a useful tool post, not marketing. Show real examples."
+          },
+          {
+            "name": "X/Twitter #MCP",
+            "url": "https://x.com",
+            "type": "community",
+            "audienceSize": "Large AI developer audience",
+            "priority": "should",
+            "notes": "Thread showing what the MCP does with concrete examples."
+          },
+          {
+            "name": "Discord — Anthropic Community",
+            "url": "https://discord.gg/anthropic",
+            "type": "community",
+            "audienceSize": "Active Claude developer community",
+            "priority": "should",
+            "notes": "Share in appropriate channel. Engage with feedback."
+          }
+        ],
+        "launchStrategy": "Launch alongside video-commerce-mcp. Cross-promote on DIY subreddits and maker communities. Demo with popular DIY YouTube channels."
+      },
+      "moat": "Tool-material relationship graph builds over time. Measurement extraction and cost estimation create switching costs.",
+      "mvpScope": [
+        "YouTube DIY video transcript extraction",
+        "Tool and material NER",
+        "Quantity and measurement extraction",
+        "Hardware category matching",
+        "Project cost estimation",
+        "Safety equipment detection"
+      ],
+      "estimatedBuildDays": 12,
+      "status": "researched"
+    }
+  ],
+  "previousBriefs": [
+    {
+      "name": "podcast-commerce-mcp",
+      "status": "researched"
+    },
+    {
+      "name": "course-commerce-mcp",
+      "status": "researched"
+    },
+    {
+      "name": "recipe-commerce-mcp",
+      "status": "researched"
+    },
+    {
+      "name": "diy-commerce-mcp",
+      "status": "researched"
+    }
+  ],
+  "marketTrends": [
+    "MCP adoption accelerating — Claude, Cursor, Windsurf all support natively",
+    "Agent-to-agent commerce emerging — agents buying services from other agents",
+    "x402 micropayment protocol gaining traction for per-call pricing",
+    "Vertical-specific MCPs outperform generic ones — domain expertise matters",
+    "Content commerce (video/podcast → purchase) is underserved by current agent tools",
+    "Multi-modal agents need structured data extraction — video is the biggest gap"
+  ],
+  "nextActions": [
+    "Evaluate top opportunity: podcast-commerce-mcp (score: 1120.0)",
+    "Review video-commerce-mcp usage patterns for signal on which verticals agents request",
+    "Check MCP directories for new competitors in content commerce space",
+    "14-day traction window: build MVP of podcast-commerce-mcp and measure adoption",
+    "If no traction after 14 days, pivot to next opportunity on the list",
+    "Publish on MCP registries: mcp.so, Smithery, npm, GitHub MCP servers list"
+  ]
+}

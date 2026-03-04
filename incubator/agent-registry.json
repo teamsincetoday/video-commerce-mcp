@@ -1,0 +1,85 @@
+{
+  "agents": [
+    {
+      "id": "health-monitor",
+      "name": "Health Monitor",
+      "purpose": "Monitors system health, alerts on anomalies, manages cache lifecycle",
+      "owner": "operate",
+      "capabilities": [
+        "cache-stats-analysis",
+        "error-rate-tracking",
+        "budget-monitoring",
+        "slack-alerting"
+      ],
+      "schedule": "daily",
+      "version": "1.0.0",
+      "status": "active",
+      "createdAt": "2026-03-04T20:30:20.978Z"
+    },
+    {
+      "id": "quality-gate",
+      "name": "Quality Gate",
+      "purpose": "Runs tests, checks types, audits dependencies, maintains CI",
+      "owner": "improve",
+      "capabilities": [
+        "typecheck",
+        "test-runner",
+        "dependency-audit",
+        "coverage-analysis"
+      ],
+      "schedule": "weekly",
+      "version": "1.0.0",
+      "status": "active",
+      "createdAt": "2026-03-04T20:30:20.979Z"
+    },
+    {
+      "id": "knowledge-builder",
+      "name": "Knowledge Builder",
+      "purpose": "Documents learnings, maintains memory, generates improvement briefs",
+      "owner": "improve",
+      "capabilities": [
+        "log-analysis",
+        "pattern-extraction",
+        "documentation",
+        "threshold-tuning"
+      ],
+      "schedule": "weekly",
+      "version": "1.0.0",
+      "status": "active",
+      "createdAt": "2026-03-04T20:30:20.980Z"
+    },
+    {
+      "id": "market-scout",
+      "name": "Market Scout",
+      "purpose": "Researches MCP ecosystem gaps, scores opportunities, tracks traction",
+      "owner": "discover",
+      "capabilities": [
+        "ecosystem-analysis",
+        "opportunity-scoring",
+        "traction-tracking",
+        "marketplace-monitoring"
+      ],
+      "schedule": "monthly",
+      "version": "1.0.0",
+      "status": "active",
+      "createdAt": "2026-03-04T20:30:20.980Z"
+    },
+    {
+      "id": "promoter",
+      "name": "Promoter",
+      "purpose": "Publishes MCPs to registries and communities, tracks distribution",
+      "owner": "discover",
+      "capabilities": [
+        "npm-publish",
+        "registry-submission",
+        "community-posting",
+        "download-tracking"
+      ],
+      "schedule": "on-demand",
+      "version": "1.0.0",
+      "status": "active",
+      "createdAt": "2026-03-04T20:30:20.981Z"
+    }
+  ],
+  "lastUpdated": "2026-03-04T20:30:20.981Z"
+}

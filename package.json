@@ -1,0 +1,91 @@
+{
+  "name": "video-commerce-mcp",
+  "version": "0.1.0",
+  "description": "Video Commerce Intelligence MCP Server - Extract commercial entities, score monetization, and discover market gaps from YouTube videos",
+  "type": "module",
+  "license": "MIT",
+  "author": "MyGardenShows",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MyGardenShows/video-commerce-mcp.git"
+  },
+  "homepage": "https://github.com/MyGardenShows/video-commerce-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/MyGardenShows/video-commerce-mcp/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "video-intelligence",
+    "commerce",
+    "youtube",
+    "ner",
+    "named-entity-recognition",
+    "monetization",
+    "x402",
+    "entity-extraction",
+    "ai-agent",
+    "content-intelligence",
+    "creator-tools",
+    "affiliate-marketing"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "bin": {
+    "video-commerce-mcp": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./server": {
+      "import": "./dist/server.js",
+      "types": "./dist/server.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "data",
+    "README.md",
+    "LICENSE",
+    ".env.example"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/cli.ts",
+    "start": "node dist/cli.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "better-sqlite3": "^12.6.2",
+    "openai": "^6.25.0",
+    "youtube-transcript": "^1.2.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.15.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
+  },
+  "peerDependencies": {
+    "@coinbase/x402": "^2.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@coinbase/x402": {
+      "optional": true
+    }
+  }
+}
