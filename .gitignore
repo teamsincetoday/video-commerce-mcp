@@ -7,3 +7,8 @@ dist/
 *.sqlite
 .mcp.json
 .claude/
+
+# Internal — not part of the MCP product
+incubator/
+research/
+scripts/validate-payment-flow.ts
