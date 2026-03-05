@@ -7,12 +7,3 @@ dist/
 *.sqlite
 .mcp.json
 .claude/
-
-# Internal — not part of the MCP product
-incubator/
-research/
-scripts/export-metrics.ts
-scripts/validate-payment-flow.ts
-data/metrics-snapshot.json
-LAUNCH.md
-docs/marketplace-listing.md
