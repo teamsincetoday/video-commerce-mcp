@@ -7,3 +7,11 @@ dist/
 *.sqlite
 .mcp.json
 .claude/
+
+# Deployment/infra scaffolding — not part of the product
+Dockerfile
+.dockerignore
+fly.toml
+railway.toml
+deploy-*.sh
+setup-*.sh
