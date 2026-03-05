@@ -1,0 +1,61 @@
+{
+  "date": "2026-03-05",
+  "timestamp": "2026-03-05T18:07:24.526Z",
+  "improvementScore": 8.5,
+  "health": {
+    "status": "healthy",
+    "cacheHitRate": 0,
+    "errorRate": 0,
+    "testsPassing": true,
+    "budgetUsed": 0,
+    "issues": []
+  },
+  "usage": {
+    "callsToday": 3,
+    "callsYesterday": 0,
+    "delta": 3,
+    "deltaPercent": 0,
+    "uniqueAgentsToday": 1,
+    "revenueToday": 0,
+    "topTools": [
+      {
+        "tool": "get_seasonal_calendar",
+        "calls": 3
+      }
+    ]
+  },
+  "sessions": {
+    "totalSessions": 0,
+    "avgDurationSeconds": 0,
+    "avgCallsPerSession": 0,
+    "sessionsWithErrors": 0
+  },
+  "incidents": {
+    "openCount": 1,
+    "unresolvedTitles": [
+      "INC-YYYY-MM-DD-N: [Short title]"
+    ]
+  },
+  "memoryCheck": {
+    "totalEntries": 3,
+    "recentEntries": 3,
+    "unactionedLearnings": [
+      "[003] video-commerce-mcp: score 2.9/10, verdict abandon. 3 calls/week, 1 agents, $0.00 revenue."
+    ]
+  },
+  "suggestions": [
+    {
+      "type": "action",
+      "priority": 85,
+      "description": "1 unresolved incidents: INC-YYYY-MM-DD-N: [Short title]",
+      "rationale": "Open incidents compound — Kai should prioritize resolution"
+    },
+    {
+      "type": "action",
+      "priority": 40,
+      "description": "1 unactioned learnings in memory.json",
+      "rationale": "Learnings that aren't acted on are wasted — review and action or mark obsolete"
+    }
+  ],
+  "learnings": []
+}
