@@ -102,16 +102,21 @@ export class AnalysisCache {
 
   constructor(options?: AnalysisCacheOptions) {
     const cacheDir = process.env.ANALYSIS_CACHE_DIR;
-    const dbPath = resolve(
-      options?.dbPath
-        ?? (cacheDir ? `${cacheDir}/cache.db` : DEFAULT_DB_PATH)
-    );
+    // When running under vitest, use in-memory SQLite to prevent parallel
+    // worker file contention. Explicit dbPath always takes precedence.
+    const defaultPath = process.env.VITEST ? ":memory:" : DEFAULT_DB_PATH;
+    const rawPath =
+      options?.dbPath ?? (cacheDir ? `${cacheDir}/cache.db` : defaultPath);
+    // Guard: :memory: must not be passed through path.resolve()
+    const dbPath = rawPath === ":memory:" ? rawPath : resolve(rawPath);
     this.defaultTTL = options?.defaultTTL ?? DEFAULT_TTL_SECONDS;
 
-    // Ensure directory exists
-    const dir = dirname(dbPath);
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
+    // Ensure directory exists (skip for in-memory databases)
+    if (dbPath !== ":memory:") {
+      const dir = dirname(dbPath);
+      if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true });
+      }
     }
 
     // Open database with WAL mode for better concurrent read performance
