@@ -142,7 +142,7 @@ export function computePromotionStatus(promo: {
   const isLive = now >= startDate && now <= endDate && promo.isActive;
 
   const msRemaining = Math.max(0, endDate.getTime() - now.getTime());
-  const daysRemaining = Math.floor(msRemaining / (1000 * 60 * 60 * 24));
+  const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
   const hoursRemaining = Math.floor(msRemaining / (1000 * 60 * 60));
 
   const totalDuration = endDate.getTime() - startDate.getTime();

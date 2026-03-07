@@ -32,6 +32,10 @@ export interface HybridFilterConfig {
   aiMode: "hybrid" | "keyword-only" | "ai-only";
   /** Enable location extraction via AI (more expensive) */
   enableAILocationExtraction: boolean;
+  /** Optional vertical-specific keyword map. Keys are category names, values are keyword arrays. Falls back to GARDENING_KEYWORDS if not provided. */
+  verticalKeywords?: Record<string, string[]>;
+  /** Display name of the vertical for AI prompt context. Default: "gardening" */
+  verticalDisplayName?: string;
 }
 
 export interface KeywordRelevanceResult {
@@ -49,6 +53,8 @@ export interface KeywordRelevanceResult {
     supportsEvents: boolean;
     supportsGardenShows: boolean;
   };
+  /** Dynamic category matches for the vertical (category id → matched boolean) */
+  categoryMatches: Record<string, boolean>;
   matchedKeywords: string[];
 }
 
@@ -178,13 +184,15 @@ function analyzeKeywordRelevance(
   programName: string,
   description: string = "",
   programTerms: string = "",
+  verticalKeywords?: Record<string, string[]>,
 ): KeywordRelevanceResult {
+  const keywordMap = verticalKeywords ?? GARDENING_KEYWORDS;
   const text =
     `${programName} ${description} ${programTerms}`.toLowerCase();
   const matchedKeywords: string[] = [];
   const verticalHits: Record<string, boolean> = {};
 
-  for (const [category, keywords] of Object.entries(GARDENING_KEYWORDS)) {
+  for (const [category, keywords] of Object.entries(keywordMap)) {
     for (const keyword of keywords) {
       if (text.includes(keyword.toLowerCase())) {
         matchedKeywords.push(keyword);
@@ -208,6 +216,12 @@ function analyzeKeywordRelevance(
 
   const isRelevant = relevanceScore >= 50;
 
+  // Build dynamic categoryMatches from the keyword map that was used
+  const categoryMatches: Record<string, boolean> = {};
+  for (const cat of Object.keys(keywordMap)) {
+    categoryMatches[cat] = !!verticalHits[cat];
+  }
+
   return {
     isRelevant,
     relevanceScore,
@@ -225,6 +239,7 @@ function analyzeKeywordRelevance(
       supportsEvents: !!verticalHits["events"],
       supportsGardenShows: !!verticalHits["events"],
     },
+    categoryMatches,
     matchedKeywords,
   };
 }
@@ -267,7 +282,7 @@ export class HybridRelevanceFilter {
     // Force keyword-only if no AI client
     if (!this.aiClient || this.config.aiMode === "keyword-only") {
       this.stats.keywordOnly++;
-      return analyzeKeywordRelevance(programName, description, programTerms);
+      return analyzeKeywordRelevance(programName, description, programTerms, this.config.verticalKeywords);
     }
 
     // Force AI-only mode
@@ -281,6 +296,7 @@ export class HybridRelevanceFilter {
       programName,
       description,
       programTerms,
+      this.config.verticalKeywords,
     );
 
     // High confidence: trust keyword filter
@@ -318,7 +334,10 @@ export class HybridRelevanceFilter {
       throw new Error("AI client not configured");
     }
 
-    const prompt = `Analyze if this affiliate program is relevant for a gardening YouTube channel that covers topics like: plants, seeds, garden tools, gardening books, courses, materials (compost, fertilizers), and garden shows/events.
+    const verticalName = this.config.verticalDisplayName ?? "gardening";
+    const topicList = Object.keys(this.config.verticalKeywords ?? GARDENING_KEYWORDS).join(", ");
+
+    const prompt = `Analyze if this affiliate program is relevant for a ${verticalName} YouTube channel that covers topics like: ${topicList}.
 
 Program Name: ${programName}
 Description: ${description || "No description provided"}
@@ -342,24 +361,38 @@ Respond in JSON format:
   }
 }
 
-Be strict: only mark as relevant if directly related to gardening, not general home/lifestyle.`;
+Be strict: only mark as relevant if directly related to ${verticalName}, not general home/lifestyle.`;
 
     try {
       const response = await this.aiClient.complete({
         systemPrompt:
-          "You are an expert at analyzing affiliate programs for relevance to gardening content. Respond only with valid JSON.",
+          `You are an expert at analyzing affiliate programs for relevance to ${verticalName} content. Respond only with valid JSON.`,
         userPrompt: prompt,
         model: "gpt-4o-mini",
         temperature: 0.3,
         maxTokens: 500,
       });
 
-      const analysis = JSON.parse(response.content);
+      const analysis = JSON.parse(response.content) as {
+        isRelevant: boolean;
+        relevanceScore: number;
+        reason: string;
+        verticals: KeywordRelevanceResult["verticals"];
+      };
+
+      // Build categoryMatches from the vertical keywords map for AI results
+      const keywordMap = this.config.verticalKeywords ?? GARDENING_KEYWORDS;
+      const categoryMatches: Record<string, boolean> = {};
+      for (const cat of Object.keys(keywordMap)) {
+        categoryMatches[cat] = false;
+      }
+
       return {
         isRelevant: analysis.isRelevant,
         relevanceScore: analysis.relevanceScore,
         reason: analysis.reason,
         verticals: analysis.verticals,
+        categoryMatches,
         matchedKeywords: [],
       };
     } catch (error) {
@@ -367,7 +400,7 @@ Be strict: only mark as relevant if directly related to gardening, not general h
         "AI analysis failed, falling back to keyword filter",
         error instanceof Error ? error : undefined,
       );
-      return analyzeKeywordRelevance(programName, description, programTerms);
+      return analyzeKeywordRelevance(programName, description, programTerms, this.config.verticalKeywords);
     }
   }
 
@@ -419,6 +452,8 @@ export function createHybridFilter(
     | "balanced"
     | "quality-first" = "balanced",
   logger?: Logger,
+  verticalKeywords?: Record<string, string[]>,
+  verticalDisplayName?: string,
 ): HybridRelevanceFilter {
   const presets: Record<string, Partial<HybridFilterConfig>> = {
     "aggressive-cost-saving": {
@@ -441,5 +476,9 @@ export function createHybridFilter(
     },
   };
 
-  return new HybridRelevanceFilter(aiClient, presets[preset], logger);
+  return new HybridRelevanceFilter(
+    aiClient,
+    { ...presets[preset], verticalKeywords, verticalDisplayName },
+    logger,
+  );
 }

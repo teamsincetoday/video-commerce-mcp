@@ -52,7 +52,7 @@ Tools (12 total):
     get_seasonal_calendar        Regional commerce calendar
 
 Documentation:
-  https://github.com/MyGardenShows/video-commerce-mcp
+  https://github.com/factum-studio/video-commerce-mcp
 \n`);
   process.exit(0);
 }

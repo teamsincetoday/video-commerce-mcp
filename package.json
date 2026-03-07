@@ -7,11 +7,11 @@
   "author": "Since Today Studio <team@sincetoday.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MyGardenShows/video-commerce-mcp.git"
+    "url": "https://github.com/teamsincetoday/video-commerce-mcp.git"
   },
-  "homepage": "https://github.com/MyGardenShows/video-commerce-mcp#readme",
+  "homepage": "https://github.com/teamsincetoday/video-commerce-mcp#readme",
   "bugs": {
-    "url": "https://github.com/MyGardenShows/video-commerce-mcp/issues"
+    "url": "https://github.com/teamsincetoday/video-commerce-mcp/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -56,8 +56,7 @@
   },
   "files": [
     "dist",
-    "data",
-    "scripts",
+    "data/plant-dictionary-sample.json",
     "README.md",
     "LICENSE",
     ".env.example"
@@ -68,6 +67,11 @@
     "start": "node dist/cli.js",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:smoke": "SMOKE_TESTS=true vitest run src/__tests__/smoke",
+    "eval": "tsx src/__tests__/eval/eval-cli.ts",
+    "eval:live": "EVAL_LIVE=true tsx src/__tests__/eval/eval-cli.ts",
+    "eval:update": "EVAL_UPDATE=true tsx src/__tests__/eval/eval-cli.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build"
@@ -81,6 +85,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.15.0",
+    "@vitest/coverage-v8": "^4.0.18",
     "tsx": "^4.21.0",
     "typescript": "^5.7.0",
     "vitest": "^4.0.18"

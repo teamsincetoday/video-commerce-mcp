@@ -2,7 +2,7 @@
  * Gardening Vertical Configuration
  *
  * The default vertical — extracted from hardcoded patterns throughout
- * the MyGardenShows monolith. This config captures every domain-specific
+ * the Factum monolith. This config captures every domain-specific
  * keyword, pattern, prompt, and taxonomy used by the pipeline.
  *
  * Source patterns extracted from:

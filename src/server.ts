@@ -15,8 +15,10 @@
 
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+// Transport classes are dynamically imported in their respective start functions
+// to avoid side effects on process.stdin/stdout at module load time (which
+// crashes vitest forked workers).
+import type { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { createServer as createHttpServer } from "node:http";
 import { AsyncLocalStorage } from "node:async_hooks";
 
@@ -448,7 +450,7 @@ function registerTools(
   // ---- Tool 3: get_monetization_opportunities ----
   server.tool(
     "get_monetization_opportunities",
-    "Ranked monetization strategies for a video, including affiliate commerce, course creation, and sponsored content opportunities with estimated revenue potential.",
+    "Ranked monetization strategies for a video — affiliate commerce, course creation, and sponsored content — each with revenue estimate, confidence score, and implementation steps.",
     {
       youtube_url: z
         .string()
@@ -694,7 +696,7 @@ function registerTools(
   // ---- Tool 7: discover_opportunities ----
   server.tool(
     "discover_opportunities",
-    "Three-forces convergence scoring: where demand, commission, and authority align. Returns ranked opportunities with invest_now / watch_closely / test_small / skip recommendations.",
+    "Find affiliate commerce opportunities where audience demand, commission rates, and channel authority converge. Returns ranked opportunities with invest_now / watch_closely / test_small / skip recommendations.",
     {
       vertical: z
         .string()
@@ -736,7 +738,7 @@ function registerTools(
   // ---- Tool 8: scan_affiliate_programs ----
   server.tool(
     "scan_affiliate_programs",
-    "Search affiliate networks for programs matching a category or vertical. Returns program details, commission rates, and relevance scores.",
+    "Search affiliate networks (Awin, CJ, ShareASale, and others) for programs matching a category or vertical. Returns program details, commission rates, and relevance scores.",
     {
       category: z
         .string()
@@ -989,6 +991,7 @@ export function createServer(options?: ServerOptions): McpServer {
  * Start the MCP server with stdio transport (for local MCP use).
  */
 export async function startStdioServer(options?: ServerOptions): Promise<void> {
+  const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
   const server = createServer(options);
   const transport = new StdioServerTransport();
   await server.connect(transport);
@@ -1007,6 +1010,7 @@ export async function startSseServer(
   port = 3001,
   options?: ServerOptions,
 ): Promise<void> {
+  const { SSEServerTransport } = await import("@modelcontextprotocol/sdk/server/sse.js");
   const server = createServer(options);
 
   // Track active SSE transports and session-level auth by session ID

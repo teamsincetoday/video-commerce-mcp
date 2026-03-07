@@ -28,6 +28,7 @@ import type {
   Logger,
 } from "../types.js";
 import { defaultLogger } from "../types.js";
+import type { VerticalConfig } from "../verticals/vertical-config.js";
 
 // Re-export types for convenience
 export type {
@@ -133,8 +134,12 @@ interface InternalStageResult extends StageResult {
 export class AdvancedTranscriptPreprocessor {
   protected options: Required<PreprocessingOptions>;
   protected logger: Logger;
+  /** Domain-specific keywords for filtering. Defaults to BOTANICAL_KEYWORDS. */
+  protected domainKeywords: string[];
+  /** Filtering aggressiveness from vertical config (0-1). */
+  protected filteringAggressiveness: number;
 
-  constructor(options: PreprocessingOptions = {}, logger?: Logger) {
+  constructor(options: PreprocessingOptions = {}, logger?: Logger, verticalConfig?: VerticalConfig) {
     this.options = {
       targetReduction: options.targetReduction ?? 0.75,
       maxLength: options.maxLength ?? 8000,
@@ -143,6 +148,20 @@ export class AdvancedTranscriptPreprocessor {
       enableAggressiveFiltering: options.enableAggressiveFiltering ?? true,
     };
     this.logger = logger ?? defaultLogger;
+
+    // Use vertical config keywords if provided, otherwise fall back to botanical keywords
+    if (verticalConfig && verticalConfig.contentSignals.inclusionKeywords.length > 0) {
+      this.domainKeywords = verticalConfig.contentSignals.inclusionKeywords;
+      this.filteringAggressiveness = verticalConfig.filteringAggressiveness;
+    } else if (verticalConfig && verticalConfig.filteringAggressiveness < 0.3) {
+      // Generic/low-aggressiveness vertical with no keywords: skip semantic filtering
+      this.domainKeywords = [];
+      this.filteringAggressiveness = verticalConfig.filteringAggressiveness;
+    } else {
+      // Default: botanical keywords (backward compat)
+      this.domainKeywords = BOTANICAL_KEYWORDS;
+      this.filteringAggressiveness = 0.7;
+    }
   }
 
   /**
@@ -164,25 +183,35 @@ export class AdvancedTranscriptPreprocessor {
 
     this.options.maxLength = this.options.maxLength ?? dynamicMaxLength;
 
-    // Stage 1: Noise Removal (40% reduction target)
+    // Stage 1: Noise Removal (40% reduction target) — always runs
     const stage1Result = this.stage1NoiseRemoval(currentText);
     stages.push(stage1Result);
     currentText = stage1Result.outputText;
 
+    // When filtering aggressiveness is low (generic/unknown vertical),
+    // skip keyword-based semantic stages — just do noise removal + dedup + length limiting
+    const skipSemanticFiltering = this.filteringAggressiveness < 0.3 || this.domainKeywords.length === 0;
+
     // Stage 2: Semantic Filtering (20-30% reduction target)
-    const stage2Result = this.stage2SemanticFiltering(currentText);
-    stages.push(stage2Result);
-    currentText = stage2Result.outputText;
+    if (!skipSemanticFiltering) {
+      const stage2Result = this.stage2SemanticFiltering(currentText);
+      stages.push(stage2Result);
+      currentText = stage2Result.outputText;
+    }
 
     // Stage 3: Entity Focus (10-20% reduction target)
-    const stage3Result = this.stage3EntityFocus(currentText);
-    stages.push(stage3Result);
-    currentText = stage3Result.outputText;
+    if (!skipSemanticFiltering) {
+      const stage3Result = this.stage3EntityFocus(currentText);
+      stages.push(stage3Result);
+      currentText = stage3Result.outputText;
+    }
 
     // Stage 4: Context Window Optimization
-    const stage4Result = this.stage4ContextOptimization(currentText);
-    stages.push(stage4Result);
-    currentText = stage4Result.outputText;
+    if (!skipSemanticFiltering) {
+      const stage4Result = this.stage4ContextOptimization(currentText);
+      stages.push(stage4Result);
+      currentText = stage4Result.outputText;
+    }
 
     // Stage 5: De-duplication
     const stage5Result = this.stage5Deduplication(currentText);
@@ -317,7 +346,7 @@ export class AdvancedTranscriptPreprocessor {
     const scoredSentences = sentences.map((sentence) => {
       const words = sentence.toLowerCase().split(/\s+/);
       const keywordCount = words.filter((word) =>
-        BOTANICAL_KEYWORDS.some((kw) => word.includes(kw)),
+        this.domainKeywords.some((kw) => word.includes(kw)),
       ).length;
       const density = keywordCount / Math.max(words.length, 1);
       return { sentence, density, keywordCount };
@@ -362,7 +391,7 @@ export class AdvancedTranscriptPreprocessor {
     const botanicalTermsFound = new Set<string>();
 
     for (const word of words) {
-      for (const keyword of BOTANICAL_KEYWORDS) {
+      for (const keyword of this.domainKeywords) {
         if (word.includes(keyword)) {
           botanicalTermsFound.add(keyword);
         }
@@ -380,7 +409,7 @@ export class AdvancedTranscriptPreprocessor {
         .filter((s) => s.trim().length > 0);
       const relevantSentences = sentences.filter((sentence) => {
         const lowerSentence = sentence.toLowerCase();
-        return BOTANICAL_KEYWORDS.some((kw) => lowerSentence.includes(kw));
+        return this.domainKeywords.some((kw) => lowerSentence.includes(kw));
       });
       processed = relevantSentences.join(". ");
     }
@@ -418,7 +447,7 @@ export class AdvancedTranscriptPreprocessor {
     const keywordPositions: number[] = [];
     const lowerText = text.toLowerCase();
 
-    for (const keyword of BOTANICAL_KEYWORDS) {
+    for (const keyword of this.domainKeywords) {
       let index = lowerText.indexOf(keyword);
       while (index !== -1) {
         keywordPositions.push(index);
@@ -626,12 +655,14 @@ export class AdvancedTranscriptPreprocessor {
 
 /**
  * Quick preprocessing with default options.
+ * Optionally accepts a VerticalConfig to use domain-specific keywords.
  */
 export async function preprocessTranscript(
   transcript: string,
   videoId?: string,
+  verticalConfig?: VerticalConfig,
 ): Promise<PreprocessingResult> {
-  const preprocessor = new AdvancedTranscriptPreprocessor();
+  const preprocessor = new AdvancedTranscriptPreprocessor({}, undefined, verticalConfig);
   return preprocessor.preprocess(transcript, videoId);
 }
 
@@ -642,13 +673,15 @@ export async function preprocessTranscriptWithOptions(
   transcript: string,
   options: PreprocessingOptions,
   videoId?: string,
+  verticalConfig?: VerticalConfig,
 ): Promise<PreprocessingResult> {
-  const preprocessor = new AdvancedTranscriptPreprocessor(options);
+  const preprocessor = new AdvancedTranscriptPreprocessor(options, undefined, verticalConfig);
   return preprocessor.preprocess(transcript, videoId);
 }
 
 /**
  * Check if transcript has sufficient botanical content to be worth processing.
+ * @deprecated Use hasSufficientDomainContent() with a VerticalConfig instead.
  */
 export function hasSufficientBotanicalContent(
   transcript: string,
@@ -657,6 +690,31 @@ export function hasSufficientBotanicalContent(
   const words = transcript.toLowerCase().split(/\s+/);
   const keywordCount = words.filter((word) =>
     BOTANICAL_KEYWORDS.some((kw) => word.includes(kw)),
+  ).length;
+  const density = keywordCount / Math.max(words.length, 1);
+  return density >= minDensity;
+}
+
+/**
+ * Check if transcript has sufficient domain content based on a vertical's keywords.
+ * Returns true for verticals with low filtering aggressiveness (generic).
+ */
+export function hasSufficientDomainContent(
+  transcript: string,
+  verticalConfig?: VerticalConfig,
+  minDensity = 0.02,
+): boolean {
+  // Generic/unknown verticals: always sufficient (let AI decide)
+  if (!verticalConfig || verticalConfig.filteringAggressiveness < 0.3) {
+    return true;
+  }
+
+  const keywords = verticalConfig.contentSignals.inclusionKeywords;
+  if (keywords.length === 0) return true;
+
+  const words = transcript.toLowerCase().split(/\s+/);
+  const keywordCount = words.filter((word) =>
+    keywords.some((kw) => word.includes(kw)),
   ).length;
   const density = keywordCount / Math.max(words.length, 1);
   return density >= minDensity;

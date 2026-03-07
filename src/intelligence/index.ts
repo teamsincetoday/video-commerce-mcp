@@ -14,6 +14,9 @@
 // Audience Taxonomy -- 7 intent archetypes
 export {
   GARDENING_INTENT_TAXONOMY,
+  STARTUP_INTENT_TAXONOMY,
+  GENERIC_INTENT_TAXONOMY,
+  getTaxonomyForVertical,
   detectIntentInSegment,
   analyzeTranscriptIntent,
   getHighValueSegments,

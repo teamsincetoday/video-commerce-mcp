@@ -16,6 +16,9 @@
  * sensible defaults/seed data when no database is available.
  */
 
+import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { AIClient, Logger } from "./types.js";
 import { defaultLogger } from "./types.js";
 
@@ -580,7 +583,11 @@ export class MarketIntelligenceOrchestrator {
 
     // For networks without live API access, use keyword-based filtering
     // on a built-in set of known gardening programs
-    const hybridFilter = createHybridFilter(this.aiClient, "balanced", this.logger);
+
+    // Load vertical-specific keyword map from the affiliate programs JSON
+    const verticalKeywords = this.loadVerticalKeywords(category);
+    const verticalDisplayName = this.detectVerticalFromCategory(category);
+    const hybridFilter = createHybridFilter(this.aiClient, "balanced", this.logger, verticalKeywords, verticalDisplayName);
 
     if (programs.length === 0) {
       // No live data -- use built-in gardening program knowledge
@@ -1479,7 +1486,91 @@ export class MarketIntelligenceOrchestrator {
   }
 
   /**
+   * Load the commerceCategories keyword map from a vertical's JSON file.
+   * Falls back to building a single "general" category from top-level keywords
+   * if no commerceCategories field is present.
+   * Returns undefined if no file exists or on parse error.
+   */
+  private loadVerticalKeywords(category: string): Record<string, string[]> | undefined {
+    const vertical = this.detectVerticalFromCategory(category);
+    const dataDir = join(dirname(fileURLToPath(import.meta.url)), "..", "data", "affiliate-programs");
+    const filePath = join(dataDir, `${vertical}.json`);
+    if (!existsSync(filePath)) return undefined;
+    try {
+      const content = readFileSync(filePath, "utf-8");
+      const data = JSON.parse(content) as { commerceCategories?: Record<string, string[]>; keywords?: string[] };
+      if (data.commerceCategories) return data.commerceCategories;
+      // Fall back to building a single "general" category from top-level keywords
+      if (data.keywords?.length) return { general: data.keywords };
+      return undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
    * Built-in known gardening affiliate programs for demo/offline use.
+   */
+  /**
+   * Detect the best-matching vertical from a category string.
+   * Loads vertical definitions from data/affiliate-programs/*.json and
+   * picks the file whose keywords best match the input.
+   * Falls back to "gardening" if no match found.
+   */
+  private detectVerticalFromCategory(category: string): string {
+    const categoryLower = category.toLowerCase();
+    const dataDir = join(
+      dirname(fileURLToPath(import.meta.url)),
+      "..",
+      "data",
+      "affiliate-programs",
+    );
+
+    // Scan all vertical JSON files and score keyword matches
+    let bestMatch = "gardening";
+    let bestScore = 0;
+
+    try {
+      const files = readdirSync(dataDir).filter((f: string) => f.endsWith(".json"));
+
+      for (const file of files) {
+        try {
+          const content = readFileSync(join(dataDir, file), "utf-8");
+          const data = JSON.parse(content) as {
+            vertical: string;
+            keywords: string[];
+            programs: unknown[];
+          };
+
+          // Score: count how many of this vertical's keywords appear in the category string
+          const score = (data.keywords ?? []).filter((kw: string) =>
+            categoryLower.includes(kw.toLowerCase()),
+          ).length;
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = data.vertical;
+          }
+        } catch {
+          // Skip malformed files
+        }
+      }
+    } catch {
+      // Fallback: manual keyword check without fs.readdirSync
+      const startupKeywords = ["startup", "saas", "software", "tech", "venture", "founder", "entrepreneur", "ai", "product", "b2b", "plaud", "notion", "beehiiv", "stripe", "hubspot", "shopify"];
+      const hasStartup = startupKeywords.some((kw) => categoryLower.includes(kw));
+      if (hasStartup) bestMatch = "startups";
+    }
+
+    return bestMatch;
+  }
+
+  /**
+   * Load curated affiliate programs for a given vertical from JSON files.
+   * Falls back to gardening vertical if no matching file found.
+   *
+   * This is the zero-cost fallback layer beneath live API lookups (CJ, PartnerStack).
+   * Add a new vertical by dropping a JSON file in data/affiliate-programs/.
    */
   private getKnownPrograms(
     category: string,
@@ -1495,134 +1586,59 @@ export class MarketIntelligenceOrchestrator {
     region?: string;
   }> {
     const categoryLower = category.toLowerCase();
+    const vertical = this.detectVerticalFromCategory(category);
+    const dataDir = join(
+      dirname(fileURLToPath(import.meta.url)),
+      "..",
+      "data",
+      "affiliate-programs",
+    );
 
-    // Base set of known gardening programs
-    const programs = [
-      {
-        id: 1001,
-        name: "Crocus Garden Centre",
-        description: "UK's largest online garden centre. Plants, bulbs, seeds, tools, and garden furniture.",
-        terms: "Garden plants, bulbs, seeds, garden tools, outdoor furniture",
-        commission: { min: 4, max: 8 },
-        cookieDuration: 30,
-        avgOrderValue: 45,
-        country: "United Kingdom",
-        region: "UK",
-      },
-      {
-        id: 1002,
-        name: "Thompson & Morgan",
-        description: "Seeds, plants, and gardening supplies since 1855.",
-        terms: "Seeds, plants, gardening equipment, bulbs, seed potatoes",
-        commission: { min: 5, max: 10 },
-        cookieDuration: 30,
-        avgOrderValue: 35,
-        country: "United Kingdom",
-        region: "UK",
-      },
-      {
-        id: 1003,
-        name: "Harrod Horticultural",
-        description: "Premium raised beds, fruit cages, garden structures, and tools.",
-        terms: "Raised beds, garden structures, tools, composting, plant supports",
-        commission: { min: 6, max: 12 },
-        cookieDuration: 45,
-        avgOrderValue: 95,
-        country: "United Kingdom",
-        region: "UK",
-      },
-      {
-        id: 1004,
-        name: "Gardening Direct",
-        description: "Plants, bedding plants, seeds, and gardening supplies at great prices.",
-        terms: "Garden plants, bedding plants, seeds, compost, plant food",
-        commission: { min: 3, max: 7 },
-        cookieDuration: 30,
-        avgOrderValue: 28,
-        country: "United Kingdom",
-        region: "UK",
-      },
-      {
-        id: 1005,
-        name: "Burgon & Ball",
-        description: "Award-winning garden tools, hand tools, and accessories.",
-        terms: "Garden tools, secateurs, trowels, hand tools, gardening gloves",
-        commission: { min: 8, max: 15 },
-        cookieDuration: 30,
-        avgOrderValue: 32,
-        country: "United Kingdom",
-        region: "UK",
-      },
-      {
-        id: 1006,
-        name: "Bakker International",
-        description: "Flower bulbs, seeds, plants, and garden accessories delivered across Europe.",
-        terms: "Bulbs, flower bulbs, plants, seeds, garden accessories",
-        commission: { min: 5, max: 10 },
-        cookieDuration: 30,
-        avgOrderValue: 40,
-        country: "Netherlands",
-        region: "EU",
-      },
-      {
-        id: 1007,
-        name: "Gardeners World Shop",
-        description: "Official BBC Gardeners' World shop. Garden gifts, tools, and subscriptions.",
-        terms: "Gardening books, garden tools, gifts, subscriptions, garden courses",
-        commission: { min: 5, max: 8 },
-        cookieDuration: 30,
-        avgOrderValue: 30,
-        country: "United Kingdom",
-        region: "UK",
-      },
-      {
-        id: 1008,
-        name: "Hortcraft Tools",
-        description: "Professional and garden tools for serious gardeners.",
-        terms: "Professional garden tools, Japanese tools, secateurs, loppers, pruning",
-        commission: { min: 7, max: 12 },
-        cookieDuration: 45,
-        avgOrderValue: 55,
-        country: "United Kingdom",
-        region: "UK",
-      },
-    ];
+    // Load programs from the matched vertical JSON
+    const loadVerticalPrograms = (verticalId: string) => {
+      const filePath = join(dataDir, `${verticalId}.json`);
+      if (!existsSync(filePath)) return null;
+      try {
+        const content = readFileSync(filePath, "utf-8");
+        const data = JSON.parse(content) as {
+          programs: Array<{
+            id: number;
+            name: string;
+            description: string;
+            terms: string;
+            commission: { min: number; max: number };
+            cookieDuration: number;
+            avgOrderValue?: number;
+            country?: string;
+            region?: string;
+          }>;
+        };
+        return data.programs ?? [];
+      } catch {
+        return null;
+      }
+    };
 
-    // Filter by category relevance if a specific category was requested
-    if (
-      categoryLower.includes("tool") ||
-      categoryLower.includes("equipment")
-    ) {
-      return programs.filter(
-        (p) =>
-          p.terms.toLowerCase().includes("tool") ||
-          p.description.toLowerCase().includes("tool"),
-      );
+    // Try matched vertical, fall back to gardening
+    let programs = loadVerticalPrograms(vertical);
+    if (!programs || programs.length === 0) {
+      programs = loadVerticalPrograms("gardening") ?? [];
     }
 
-    if (
-      categoryLower.includes("seed") ||
-      categoryLower.includes("bulb")
-    ) {
-      return programs.filter(
-        (p) =>
-          p.terms.toLowerCase().includes("seed") ||
-          p.terms.toLowerCase().includes("bulb"),
+    // Apply sub-category filter using the category string against program terms/description
+    const categoryTerms = categoryLower.split(/[\s,]+/).filter((t) => t.length > 2);
+    if (categoryTerms.length > 0) {
+      const filtered = programs.filter((p) =>
+        categoryTerms.some(
+          (term) =>
+            p.terms.toLowerCase().includes(term) ||
+            p.description.toLowerCase().includes(term),
+        ),
       );
+      // Only apply filter if it doesn't eliminate everything
+      if (filtered.length > 0) return filtered;
     }
 
-    if (
-      categoryLower.includes("raised bed") ||
-      categoryLower.includes("structure")
-    ) {
-      return programs.filter(
-        (p) =>
-          p.terms.toLowerCase().includes("raised bed") ||
-          p.terms.toLowerCase().includes("structure"),
-      );
-    }
-
-    // Default: return all gardening programs
     return programs;
   }
 }

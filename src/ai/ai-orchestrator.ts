@@ -37,6 +37,7 @@
 import OpenAI from "openai";
 import type { Logger } from "../types.js";
 import { defaultLogger } from "../types.js";
+import type { VerticalConfig } from "../verticals/vertical-config.js";
 
 // ============================================================================
 // TYPES
@@ -46,6 +47,9 @@ export interface VideoProcessingTask {
   transcript: string;
   videoId: string;
   videoTitle?: string;
+
+  /** Optional vertical config for domain-aware prompts. Defaults to gardening. */
+  verticalConfig?: VerticalConfig;
 
   // Which tasks to include (customize per use case)
   includeLanguageDetection?: boolean;
@@ -94,16 +98,7 @@ export interface VideoProcessingResult {
   // Commerce items (tools, materials, products)
   commerceItems?: Array<{
     name: string;
-    category:
-      | "TOOL"
-      | "MATERIAL"
-      | "SEED"
-      | "BOOK"
-      | "COURSE"
-      | "SERVICE"
-      | "STRUCTURE"
-      | "EVENT"
-      | "OTHER";
+    category: string;
     timestamp?: string;
     confidence: number; // 0-100
     context?: string;
@@ -111,16 +106,7 @@ export interface VideoProcessingResult {
 
   // Action intents (things viewers can do)
   actions?: Array<{
-    category:
-      | "PLANTING"
-      | "PRUNING"
-      | "WATERING"
-      | "FERTILIZING"
-      | "HARVESTING"
-      | "MAINTENANCE"
-      | "DESIGN"
-      | "TROUBLESHOOTING"
-      | "OTHER";
+    category: string;
     label: string;
     text: string;
     keyword: string;
@@ -241,14 +227,21 @@ export class AIOrchestrator {
     // Build unified prompt that handles all requested tasks
     const userPrompt = this.buildVideoProcessingPrompt(task);
 
+    // Use vertical-specific system message if available, otherwise default
+    const vertical = task.verticalConfig;
+    const systemMessage = vertical?.nerPrompt?.systemMessage
+      ? `${vertical.nerPrompt.systemMessage} Analyze the provided video transcript and return a JSON object with the requested analysis tasks. Be thorough and accurate. Respond with valid JSON only.`
+      : vertical
+        ? `You are a ${vertical.displayName} content analysis expert. Analyze the provided video transcript and return a JSON object with the requested analysis tasks. Be thorough and accurate. Respond with valid JSON only.`
+        : "You are a gardening content analysis expert. Analyze the provided video transcript and return a JSON object with the requested analysis tasks. Be thorough and accurate. Respond with valid JSON only.";
+
     try {
       const response = await this.openai.chat.completions.create({
         model: this.model,
         messages: [
           {
             role: "system",
-            content:
-              "You are a gardening content analysis expert. Analyze the provided video transcript and return a JSON object with the requested analysis tasks. Be thorough and accurate. Respond with valid JSON only.",
+            content: systemMessage,
           },
           {
             role: "user",
@@ -378,8 +371,24 @@ export class AIOrchestrator {
    *
    * CRITICAL: These prompts are core IP. Every word matters for extraction quality.
    * Do not modify without A/B testing the change.
+   *
+   * When a VerticalConfig is provided, prompts are templated to the domain.
+   * Otherwise, defaults to gardening-specific prompts for backward compat.
    */
   private buildVideoProcessingPrompt(task: VideoProcessingTask): string {
+    const vertical = task.verticalConfig;
+    const isGardening = !vertical || vertical.id === "gardening";
+
+    // Derive domain labels from vertical config
+    const entityType = vertical?.primaryEntityType ?? "plant";
+    const entityTypePlural = vertical?.primaryEntityTypePlural ?? "plants";
+    const domainName = vertical?.displayName ?? "gardening";
+
+    // Commerce category IDs from vertical
+    const commerceCategoryIds = vertical
+      ? vertical.commerceCategories.map((c) => c.id).join("|")
+      : "TOOL|MATERIAL|SEED|BOOK|COURSE|SERVICE|STRUCTURE|EVENT|OTHER";
+
     const tasks: string[] = [];
     const jsonStructure: Record<string, unknown> = {};
 
@@ -393,43 +402,73 @@ export class AIOrchestrator {
     }
 
     if (task.includeEntityExtraction) {
-      tasks.push(
-        "2. Extract ALL plant entities mentioned throughout the ENTIRE transcript",
-        "   Be COMPREHENSIVE - include EVERY plant, flower, vegetable, herb, tree, shrub mentioned:",
-        "   - Look for both common names AND scientific names",
-        "   - Include obvious plants (roses, tomatoes) AND less common ones",
-        "   - Include plants mentioned in passing, even briefly",
-        "   - Include vegetables, herbs, fruits, ornamentals, trees, shrubs, perennials, annuals",
-        "   - Include wild plants and cultivated plants",
-        "   IMPORTANT: Extract AT LEAST 10-15 plants if this is a typical gardening show episode",
-        "   Include full botanical details when available:",
-        "   - Common name (e.g., \"Mexican sunflower\")",
-        '   - Scientific name (e.g., "Tithonia rotundifolia")',
-        "   - Variety/cultivar (e.g., \"Sahin's Early\", \"Hidcote\") - include in BOTH name and scientificName",
-        "   When in doubt about whether something is a plant mention, INCLUDE IT with lower confidence"
-      );
-      jsonStructure.entities = [
-        {
-          name: 'Common name with variety (e.g., "Helenium \'Sahin\'s Early\'")',
-          scientificName:
-            'Full scientific name with variety (e.g., "Helenium \'Sahin\'s Early\'")',
-          category: "plants",
-          confidence: "number 0-100",
-          mentions: [{ timestamp: "HH:MM:SS or null", text: "context snippet" }],
-          isShoppable: "boolean - can this be purchased?",
-        },
-      ];
+      if (isGardening) {
+        // Original gardening-specific entity extraction prompt
+        tasks.push(
+          "2. Extract ALL plant entities mentioned throughout the ENTIRE transcript",
+          "   Be COMPREHENSIVE - include EVERY plant, flower, vegetable, herb, tree, shrub mentioned:",
+          "   - Look for both common names AND scientific names",
+          "   - Include obvious plants (roses, tomatoes) AND less common ones",
+          "   - Include plants mentioned in passing, even briefly",
+          "   - Include vegetables, herbs, fruits, ornamentals, trees, shrubs, perennials, annuals",
+          "   - Include wild plants and cultivated plants",
+          "   IMPORTANT: Extract AT LEAST 10-15 plants if this is a typical gardening show episode",
+          "   Include full botanical details when available:",
+          "   - Common name (e.g., \"Mexican sunflower\")",
+          '   - Scientific name (e.g., "Tithonia rotundifolia")',
+          "   - Variety/cultivar (e.g., \"Sahin's Early\", \"Hidcote\") - include in BOTH name and scientificName",
+          "   When in doubt about whether something is a plant mention, INCLUDE IT with lower confidence"
+        );
+        jsonStructure.entities = [
+          {
+            name: 'Common name with variety (e.g., "Helenium \'Sahin\'s Early\'")',
+            scientificName:
+              'Full scientific name with variety (e.g., "Helenium \'Sahin\'s Early\'")',
+            category: "plants",
+            confidence: "number 0-100",
+            mentions: [{ timestamp: "HH:MM:SS or null", text: "context snippet" }],
+            isShoppable: "boolean - can this be purchased?",
+          },
+        ];
+      } else {
+        // Domain-agnostic entity extraction prompt
+        tasks.push(
+          `2. Extract ALL ${entityTypePlural} and named entities mentioned throughout the ENTIRE transcript`,
+          `   Be COMPREHENSIVE - include EVERY ${entityType}, product, brand, platform, or named item mentioned:`,
+          "   - Include items mentioned in passing, even briefly",
+          "   - Include proper nouns, brand names, product names, platform names",
+          "   - Include technical terms and domain-specific entities",
+          `   IMPORTANT: Extract AT LEAST 10-15 ${entityTypePlural} from a typical video in this domain`,
+          "   When in doubt about whether something is a relevant entity, INCLUDE IT with lower confidence"
+        );
+        jsonStructure.entities = [
+          {
+            name: `Name of the ${entityType}`,
+            scientificName: "Formal/technical name if applicable, or null",
+            category: entityTypePlural,
+            confidence: "number 0-100",
+            mentions: [{ timestamp: "HH:MM:SS or null", text: "context snippet" }],
+            isShoppable: "boolean - can this be purchased or subscribed to?",
+          },
+        ];
+      }
     }
 
     if (task.includeDisambiguation) {
-      tasks.push(
-        "3. Disambiguate any ambiguous plant names (e.g., \"Rose\" -> Rosa genus vs rose hip)"
-      );
+      if (isGardening) {
+        tasks.push(
+          "3. Disambiguate any ambiguous plant names (e.g., \"Rose\" -> Rosa genus vs rose hip)"
+        );
+      } else {
+        tasks.push(
+          `3. Disambiguate any ambiguous ${entityType} names (resolve to the most likely meaning in context)`
+        );
+      }
       jsonStructure.disambiguated = [
         {
           originalName: "Ambiguous name from transcript",
           resolvedName: "Resolved/preferred name",
-          scientificName: "Scientific name if applicable",
+          scientificName: "Formal name if applicable",
           reason: "Brief explanation of disambiguation",
         },
       ];
@@ -447,26 +486,43 @@ export class AIOrchestrator {
     }
 
     if (task.includeCommerceItems) {
-      tasks.push(
-        "5. Extract shoppable items (tools, materials, seeds, books, courses, etc.)",
-        "   IMPORTANT: DO NOT include plant species, varieties, or cultivars as commerce items.",
-        "   Plants are extracted separately in step 2. Only extract NON-PLANT commercial products:",
-        "   - TOOL: stakes, pruners, spades, trowels, knives, secateurs, watering cans, etc.",
-        "   - MATERIAL: compost, fertilizer, grit, sand, perlite, mulch, peat-free compost, etc.",
-        "   - SEED: seed packets (but NOT live plants)",
-        "   - STRUCTURE: pots, containers, raised beds, greenhouse, cold frames, etc.",
-        "   - BOOK/COURSE: gardening books, online courses, workshops",
-        "   - SERVICE: garden design, landscaping services",
-        "   - OTHER: anything else shoppable that is NOT a plant",
-        "   TIMESTAMP REQUIREMENT: For each item, find the timestamp where it is mentioned in the transcript.",
-        "   Look for the [HH:MM:SS] or [MM:SS] marker in the transcript near where the item is discussed.",
-        "   Use the EARLIEST timestamp where the item is first mentioned or shown."
-      );
+      if (isGardening) {
+        // Original gardening-specific commerce items prompt
+        tasks.push(
+          "5. Extract shoppable items (tools, materials, seeds, books, courses, etc.)",
+          "   IMPORTANT: DO NOT include plant species, varieties, or cultivars as commerce items.",
+          "   Plants are extracted separately in step 2. Only extract NON-PLANT commercial products:",
+          "   - TOOL: stakes, pruners, spades, trowels, knives, secateurs, watering cans, etc.",
+          "   - MATERIAL: compost, fertilizer, grit, sand, perlite, mulch, peat-free compost, etc.",
+          "   - SEED: seed packets (but NOT live plants)",
+          "   - STRUCTURE: pots, containers, raised beds, greenhouse, cold frames, etc.",
+          "   - BOOK/COURSE: gardening books, online courses, workshops",
+          "   - SERVICE: garden design, landscaping services",
+          "   - OTHER: anything else shoppable that is NOT a plant",
+          "   TIMESTAMP REQUIREMENT: For each item, find the timestamp where it is mentioned in the transcript.",
+          "   Look for the [HH:MM:SS] or [MM:SS] marker in the transcript near where the item is discussed.",
+          "   Use the EARLIEST timestamp where the item is first mentioned or shown."
+        );
+      } else {
+        // Domain-agnostic commerce items prompt
+        const categoryDescriptions = vertical
+          ? vertical.commerceCategories.map((c) => `   - ${c.id}: ${c.displayName} (${c.keywords.slice(0, 5).join(", ")})`).join("\n")
+          : "";
+        tasks.push(
+          `5. Extract shoppable items (products, services, tools, platforms, etc.)`,
+          `   Extract all commercially relevant items that are NOT primary ${entityTypePlural}:`,
+          ...(categoryDescriptions ? [categoryDescriptions] : []),
+          "   - OTHER: anything else shoppable",
+          "   TIMESTAMP REQUIREMENT: For each item, find the timestamp where it is mentioned in the transcript.",
+          "   Look for the [HH:MM:SS] or [MM:SS] marker in the transcript near where the item is discussed.",
+          "   Use the EARLIEST timestamp where the item is first mentioned or shown."
+        );
+      }
+
       jsonStructure.commerceItems = [
         {
-          name: "Product/tool name (NOT plant names)",
-          category:
-            "TOOL|MATERIAL|SEED|BOOK|COURSE|SERVICE|STRUCTURE|EVENT|OTHER",
+          name: "Product/service name",
+          category: commerceCategoryIds + "|OTHER",
           timestamp:
             "HH:MM:SS from transcript (REQUIRED - find where this item is mentioned)",
           confidence: "number 0-100",
@@ -476,26 +532,47 @@ export class AIOrchestrator {
     }
 
     if (task.includeActions) {
-      tasks.push(
-        "6. Extract action intents (gardening activities viewers learn about)",
-        "   TIMESTAMP REQUIREMENT: For each action, find the timestamp where it is demonstrated or discussed.",
-        "   Look for the [HH:MM:SS] or [MM:SS] marker in the transcript near where the action occurs.",
-        "   Use the timestamp where the action is FIRST mentioned or demonstrated."
-      );
-      jsonStructure.actions = [
-        {
-          category:
-            "PLANTING|PRUNING|WATERING|FERTILIZING|HARVESTING|MAINTENANCE|DESIGN|TROUBLESHOOTING|OTHER",
-          label: 'Clear action description (e.g., "Plant tomato seeds")',
-          text: "Full context from transcript",
-          keyword: 'Main action verb (e.g., "plant", "prune")',
-          timestamp:
-            "HH:MM:SS from transcript (REQUIRED - find where this action occurs)",
-        },
-      ];
+      if (isGardening) {
+        tasks.push(
+          "6. Extract action intents (gardening activities viewers learn about)",
+          "   TIMESTAMP REQUIREMENT: For each action, find the timestamp where it is demonstrated or discussed.",
+          "   Look for the [HH:MM:SS] or [MM:SS] marker in the transcript near where the action occurs.",
+          "   Use the timestamp where the action is FIRST mentioned or demonstrated."
+        );
+        jsonStructure.actions = [
+          {
+            category:
+              "PLANTING|PRUNING|WATERING|FERTILIZING|HARVESTING|MAINTENANCE|DESIGN|TROUBLESHOOTING|OTHER",
+            label: 'Clear action description (e.g., "Plant tomato seeds")',
+            text: "Full context from transcript",
+            keyword: 'Main action verb (e.g., "plant", "prune")',
+            timestamp:
+              "HH:MM:SS from transcript (REQUIRED - find where this action occurs)",
+          },
+        ];
+      } else {
+        tasks.push(
+          `6. Extract action intents (activities or techniques viewers learn about in this ${domainName} content)`,
+          "   TIMESTAMP REQUIREMENT: For each action, find the timestamp where it is demonstrated or discussed.",
+          "   Look for the [HH:MM:SS] or [MM:SS] marker in the transcript near where the action occurs.",
+          "   Use the timestamp where the action is FIRST mentioned or demonstrated."
+        );
+        jsonStructure.actions = [
+          {
+            category: "The type of action (use a descriptive UPPERCASE category)",
+            label: "Clear action description",
+            text: "Full context from transcript",
+            keyword: "Main action verb",
+            timestamp:
+              "HH:MM:SS from transcript (REQUIRED - find where this action occurs)",
+          },
+        ];
+      }
     }
 
-    return `Analyze this gardening video transcript:
+    const domainLabel = isGardening ? "gardening" : domainName;
+
+    return `Analyze this ${domainLabel} video transcript:
 
 **Video Title:** ${task.videoTitle ?? "Unknown"}
 **Video ID:** ${task.videoId}

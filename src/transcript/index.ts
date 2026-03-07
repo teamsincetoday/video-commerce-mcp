@@ -26,6 +26,7 @@ export {
   preprocessTranscript,
   preprocessTranscriptWithOptions,
   hasSufficientBotanicalContent,
+  hasSufficientDomainContent,
   BOTANICAL_KEYWORDS,
   FILLER_WORDS,
   SPONSOR_PATTERNS,

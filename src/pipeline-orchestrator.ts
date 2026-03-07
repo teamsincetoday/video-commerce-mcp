@@ -49,6 +49,7 @@ import {
 // Intelligence layers
 import {
   analyzeTranscriptIntent,
+  getTaxonomyForVertical,
   extractVideoSkills,
   extractSeasonalContext,
   assessEditorialQuality,
@@ -56,6 +57,19 @@ import {
   type TranscriptIntentAnalysis,
   type SeasonalContext,
 } from "./intelligence/index.js";
+
+// Verticals
+import type { VerticalConfig } from "./verticals/vertical-config.js";
+import {
+  resolveVertical,
+  getRegisteredVerticalKeywords,
+  buildRuntimeVertical,
+  saveLearnedVertical,
+  collectFeedback,
+  getGenericVertical,
+} from "./verticals/index.js";
+import { detectVertical } from "./ai/vertical-detector.js";
+import OpenAI from "openai";
 
 // Types
 import type {
@@ -104,6 +118,13 @@ export interface AnalysisRequest {
   focus?: AnalysisDimension[];
   /** Optional progress callback. Called after each stage completes. */
   onProgress?: (stage: string, percent: number) => void;
+  /**
+   * Vertical ID for domain-specific analysis.
+   * - "auto" (default): auto-detect from transcript content
+   * - specific ID (e.g., "gardening", "crypto"): use that vertical
+   * - undefined: same as "auto"
+   */
+  verticalId?: string;
 }
 
 /**
@@ -128,6 +149,10 @@ export interface PipelineEntity {
   category: string;
   confidence: number;
   isShoppable: boolean;
+  /** Timestamp of first mention (HH:MM:SS or MM:SS). Null if not found in transcript. */
+  timestamp?: string;
+  /** YouTube deep-link URL to the first mention. Format: https://youtu.be/{VIDEO_ID}?t={SECONDS} */
+  timestamp_url?: string;
   mentions: Array<{ timestamp: string; context: string }>;
   monetizationPotential?: {
     affiliateScore: number;
@@ -252,6 +277,42 @@ export interface PipelineMeta {
   stagesFailed: string[];
   stageErrors: Record<string, string>;
   transcriptTokenReduction?: number;
+  /** Which vertical was used for analysis. */
+  verticalId?: string;
+  /** How the vertical was resolved. */
+  verticalSource?: "registered" | "auto-detected" | "learned" | "generic";
+}
+
+// ============================================================================
+// TIMESTAMP HELPERS
+// ============================================================================
+
+/**
+ * Convert a HH:MM:SS or MM:SS timestamp string to total seconds.
+ * Returns 0 if the string is empty or malformed.
+ */
+function timestampToSeconds(ts: string): number {
+  if (!ts) return 0;
+  const parts = ts.split(":").map(Number);
+  if (parts.some(isNaN)) return 0;
+  if (parts.length === 3) {
+    return (parts[0]! * 3600) + (parts[1]! * 60) + parts[2]!;
+  }
+  if (parts.length === 2) {
+    return (parts[0]! * 60) + parts[1]!;
+  }
+  return 0;
+}
+
+/**
+ * Build a YouTube timestamp deep-link URL.
+ * Format: https://youtu.be/{videoId}?t={seconds}
+ * Returns undefined if timestamp string is empty.
+ */
+function buildTimestampUrl(videoId: string, ts: string): string | undefined {
+  if (!ts) return undefined;
+  const seconds = timestampToSeconds(ts);
+  return `https://youtu.be/${videoId}?t=${seconds}`;
 }
 
 // ============================================================================
@@ -397,6 +458,67 @@ export class PipelineOrchestrator {
     }
 
     // -----------------------------------------------------------------------
+    // STAGE 1.5: Resolve vertical config
+    // -----------------------------------------------------------------------
+    const requestedVerticalId = request.verticalId ?? "auto";
+    let verticalConfig: VerticalConfig;
+    let verticalSource: "registered" | "auto-detected" | "learned" | "generic";
+
+    if (requestedVerticalId !== "auto") {
+      // Specific vertical requested — resolve it
+      const resolved = resolveVertical(requestedVerticalId);
+      verticalConfig = resolved.config;
+      verticalSource = resolved.source === "learned" ? "learned" : "registered";
+    } else {
+      // Auto-detect from transcript content
+      try {
+        const openaiClient = new OpenAI({ apiKey: this.openaiApiKey });
+        const detection = await detectVertical(
+          transcriptText,
+          openaiClient,
+          getRegisteredVerticalKeywords(),
+          this.logger,
+        );
+
+        if (detection.verticalId !== "unknown") {
+          // Matched a registered or learned vertical
+          const resolved = resolveVertical(detection.verticalId);
+          verticalConfig = resolved.config;
+          verticalSource = resolved.source === "learned" ? "learned" : "registered";
+        } else if (detection.confidence > 0.3 && detection.detectedCategory !== "unknown") {
+          // Build runtime vertical from LLM suggestions
+          verticalConfig = buildRuntimeVertical(
+            detection.detectedCategory,
+            detection.suggestedConfig,
+          );
+          verticalSource = "auto-detected";
+        } else {
+          // Fall back to generic
+          verticalConfig = getGenericVertical();
+          verticalSource = "generic";
+        }
+
+        totalAiCost += 0.001; // ~$0.001 for detection call
+        stagesCompleted.push("vertical_detection");
+
+        this.logger.info("Vertical resolved", {
+          videoId,
+          verticalId: verticalConfig.id,
+          source: verticalSource,
+          detectedCategory: detection.detectedCategory,
+          confidence: detection.confidence,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        stagesFailed.push("vertical_detection");
+        stageErrors["vertical_detection"] = msg;
+        this.logger.warn("Vertical detection failed, using generic", { error: msg });
+        verticalConfig = getGenericVertical();
+        verticalSource = "generic";
+      }
+    }
+
+    // -----------------------------------------------------------------------
     // STAGE 2: Fetch video metadata (non-blocking)
     // -----------------------------------------------------------------------
     progress("fetch_metadata", 10);
@@ -425,7 +547,7 @@ export class PipelineOrchestrator {
     let tokenReduction = 0;
 
     try {
-      const preprocessResult = await preprocessTranscript(transcriptText, videoId);
+      const preprocessResult = await preprocessTranscript(transcriptText, videoId, verticalConfig);
       processedText = preprocessResult.processedText;
       tokenReduction = preprocessResult.reductionPercentage;
       stagesCompleted.push("preprocess");
@@ -460,6 +582,7 @@ export class PipelineOrchestrator {
         transcript: processedText,
         videoId,
         videoTitle: metadata?.title,
+        verticalConfig,
         includeLanguageDetection: true,
         includeEntityExtraction: needsEntities,
         includeDisambiguation: needsEntities,
@@ -523,6 +646,8 @@ export class PipelineOrchestrator {
         enrichedEntities = this.buildPipelineEntities(
           aiResult.entities ?? [],
           enhancementResult.entities,
+          videoId,
+          segments,
         );
 
         stagesCompleted.push("ner_enrichment");
@@ -539,18 +664,24 @@ export class PipelineOrchestrator {
         this.logger.warn("NER enrichment failed, using raw AI entities", { error: msg });
 
         // Fall back to raw AI entities
-        enrichedEntities = (aiResult.entities ?? []).map((e) => ({
-          name: e.name,
-          scientificName: e.scientificName,
-          category: e.category,
-          confidence: (e.confidence ?? 50) / 100,
-          isShoppable: e.isShoppable,
-          mentions: (e.mentions ?? []).map((m) => ({
+        enrichedEntities = (aiResult.entities ?? []).map((e) => {
+          const rawMentions = (e.mentions ?? []).map((m) => ({
             timestamp: m.timestamp,
             context: m.text,
-          })),
-          disambiguated: false,
-        }));
+          }));
+          const firstTimestamp = rawMentions[0]?.timestamp ?? undefined;
+          return {
+            name: e.name,
+            scientificName: e.scientificName,
+            category: e.category,
+            confidence: (e.confidence ?? 50) / 100,
+            isShoppable: e.isShoppable,
+            timestamp: firstTimestamp,
+            timestamp_url: firstTimestamp ? buildTimestampUrl(videoId, firstTimestamp) : undefined,
+            mentions: rawMentions,
+            disambiguated: false,
+          };
+        });
       }
     }
 
@@ -585,7 +716,7 @@ export class PipelineOrchestrator {
         }));
 
         const intentAnalysis: TranscriptIntentAnalysis =
-          analyzeTranscriptIntent(intentInput);
+          analyzeTranscriptIntent(intentInput, getTaxonomyForVertical(verticalConfig.id));
 
         audienceResult = {
           dominantIntent: intentAnalysis.summary.topIntent || null,
@@ -641,6 +772,7 @@ export class PipelineOrchestrator {
               description: metadata?.description ?? undefined,
               transcript: processedText.substring(0, 3000),
               channelName: metadata?.channelName,
+              vertical: verticalConfig.id,
               entities: enrichedEntities.slice(0, 10).map((e) => ({
                 commonName: e.name,
                 latinName: e.scientificName ?? e.name,
@@ -850,6 +982,8 @@ export class PipelineOrchestrator {
         stagesFailed,
         stageErrors,
         transcriptTokenReduction: tokenReduction,
+        verticalId: verticalConfig.id,
+        verticalSource,
       },
     };
 
@@ -867,6 +1001,29 @@ export class PipelineOrchestrator {
         this.logger.warn("Cache storage failed", {
           error: err instanceof Error ? err.message : String(err),
         });
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // STAGE 14: Learn/refine vertical (persist auto-detected, refine learned)
+    // -----------------------------------------------------------------------
+    if (
+      (verticalSource === "auto-detected" || verticalSource === "learned") &&
+      enrichedEntities.length > 0
+    ) {
+      try {
+        const feedback = collectFeedback(enrichedEntities, commerceItems, aiResult);
+        saveLearnedVertical(verticalConfig.id, verticalConfig, videoId, feedback);
+        stagesCompleted.push("vertical_learning");
+        this.logger.info("Learned/refined vertical", {
+          verticalId: verticalConfig.id,
+          verticalSource,
+          videoId,
+          feedbackEntities: feedback.entityCount,
+          feedbackCommerceItems: feedback.commerceItemCount,
+        });
+      } catch {
+        // Non-fatal
       }
     }
 
@@ -889,14 +1046,41 @@ export class PipelineOrchestrator {
   // ==========================================================================
 
   /**
+   * Search transcript segments for the first occurrence of an entity name.
+   * Returns the HH:MM:SS timestamp string of the matching segment, or undefined.
+   */
+  private findEntityTimestamp(
+    entityName: string,
+    segments: Array<{ timestamp: string; text: string; start: number; duration: number }>,
+  ): string | undefined {
+    if (!entityName || segments.length === 0) return undefined;
+    const needle = entityName.toLowerCase();
+    const match = segments.find((s) => s.text.toLowerCase().includes(needle));
+    return match?.timestamp;
+  }
+
+  /**
    * Build pipeline entities by merging AI output with NER enrichment data.
    */
   private buildPipelineEntities(
     aiEntities: NonNullable<VideoProcessingResult["entities"]>,
     enhancedEntities: EnhancedEntity[],
+    videoId: string,
+    segments: Array<{ timestamp: string; text: string; start: number; duration: number }>,
   ): PipelineEntity[] {
     return aiEntities.map((aiEntity, index) => {
       const enhanced = enhancedEntities[index];
+
+      const entityMentions = (aiEntity.mentions ?? []).map((m) => ({
+        timestamp: m.timestamp,
+        context: m.text,
+      }));
+
+      // Prefer segment-matched timestamp (accurate) over AI-reported timestamp (often wrong)
+      const aiTimestamp = entityMentions[0]?.timestamp;
+      const segmentTimestamp = this.findEntityTimestamp(aiEntity.name, segments);
+      // Only use segment timestamp if it's non-trivially located (not 00:00:00 fallback)
+      const firstTimestamp = segmentTimestamp ?? (aiTimestamp && aiTimestamp !== "00:00:00" ? aiTimestamp : undefined);
 
       return {
         name: aiEntity.name,
@@ -906,10 +1090,9 @@ export class PipelineOrchestrator {
           ? enhanced.confidence
           : (aiEntity.confidence ?? 50) / 100,
         isShoppable: aiEntity.isShoppable,
-        mentions: (aiEntity.mentions ?? []).map((m) => ({
-          timestamp: m.timestamp,
-          context: m.text,
-        })),
+        timestamp: firstTimestamp,
+        timestamp_url: firstTimestamp ? buildTimestampUrl(videoId, firstTimestamp) : undefined,
+        mentions: entityMentions,
         // NER enrichment
         plantId: enhanced?.plantId,
         taxonomyLevel: enhanced?.taxonomyLevel,

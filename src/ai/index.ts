@@ -48,3 +48,10 @@ export {
   type AutoTuneResult,
   type PromptImprovementSuggestion,
 } from "./ner-prompt-evolution.js";
+
+// Vertical Detector — auto-classify content domain
+export {
+  detectVertical,
+  type VerticalDetectionResult,
+  type SuggestedVerticalConfig,
+} from "./vertical-detector.js";

@@ -54,6 +54,8 @@ export interface VideoAssessmentInput {
   transcript?: string;
   channelName?: string;
   thumbnail?: string;
+  /** Detected content vertical (e.g., "gardening", "technology", "startup"). Defaults to gardening. */
+  vertical?: string;
   entities?: Array<{
     commonName: string;
     latinName: string;
@@ -70,8 +72,45 @@ export interface EditorialAssessmentOptions {
 // EDITORIAL PROMPT (inlined -- the monolith imports from editorial-ai-prompts)
 // ============================================================================
 
+/** Vertical-specific editorial context for quality assessment. */
+interface VerticalEditorialContext {
+  publicationName: string;
+  systemRole: string;
+  dimension6Label: string;
+  dimension6Question: string;
+  featuredSection: string;
+}
+
+/** Returns the editorial context appropriate for a content vertical. */
+function getEditorialContext(vertical?: string): VerticalEditorialContext {
+  const v = (vertical ?? "gardening").toLowerCase();
+
+  if (v === "technology" || v === "tech" || v === "startup" || v === "startups" ||
+      v === "ai" || v === "saas" || v === "software" || v === "developer" ||
+      v === "crypto" || v === "cryptocurrency" || v === "fintech") {
+    return {
+      publicationName: "a premium technology publication",
+      systemRole: "You are an editorial quality assessor for a premium technology and startup publication. Evaluate content against standards like Stratechery, Acquired, or Lex Fridman: insightful, technically credible, commercially aware. Output JSON only.",
+      dimension6Label: "DOMAIN EXPERTISE",
+      dimension6Question: "Does the presenter demonstrate deep domain knowledge, use accurate technical terminology, and show credibility with expert guests?",
+      featuredSection: "Featured Analysis",
+    };
+  }
+
+  // Default: gardening
+  return {
+    publicationName: "a premium gardening magazine",
+    systemRole: "You are an editorial quality assessor for a premium gardening magazine. Evaluate content against Gardens Illustrated standards: warm, knowledgeable, design-focused, seasonally aware. Output JSON only.",
+    dimension6Label: "BOTANICAL LITERACY",
+    dimension6Question: "Does the presenter use proper plant names and demonstrate botanical knowledge?",
+    featuredSection: "Homepage Featured",
+  };
+}
+
 function buildEditorialPrompt(input: VideoAssessmentInput): string {
-  const plants = input.entities
+  const ctx = getEditorialContext(input.vertical);
+
+  const entities = input.entities
     ? input.entities.map((e) => `${e.commonName} (${e.latinName})`).join(", ")
     : "Not yet extracted";
 
@@ -79,13 +118,13 @@ function buildEditorialPrompt(input: VideoAssessmentInput): string {
     ? input.transcript.substring(0, 2000)
     : input.description?.substring(0, 500) || "";
 
-  return `Evaluate this video for inclusion in a premium gardening magazine.
+  return `Evaluate this video for inclusion in ${ctx.publicationName}.
 
 VIDEO TITLE: ${input.title}
 CHANNEL: ${input.channelName || "Unknown"}
 DESCRIPTION: ${input.description || "No description"}
 THUMBNAIL: ${input.thumbnail || "Not available"}
-PLANTS MENTIONED: ${plants}
+KEY ENTITIES MENTIONED: ${entities}
 
 TRANSCRIPT EXCERPT:
 ${transcriptExcerpt}
@@ -94,17 +133,17 @@ Score each dimension 0-100:
 
 1. VISUAL QUALITY: Is the thumbnail and production clean, calm, editorial? (Not clickbait, ALL CAPS, or sensationalist)
 2. CONTENT DEPTH: Does the video provide substantive, in-depth knowledge? (Not superficial "top 10" lists)
-3. SEASONAL RELEVANCE: Is the content timely and seasonally appropriate?
-4. DESIGN CONTEXT: Does it show garden design thinking, not just isolated plant care?
+3. SEASONAL RELEVANCE: Is the content timely and relevant to current events or trends in this domain?
+4. DESIGN CONTEXT: Does it show broader strategic or design thinking, not just surface-level coverage?
 5. NARRATIVE STRUCTURE: Does it have a story arc or editorial flow?
-6. BOTANICAL LITERACY: Does the presenter use proper plant names and demonstrate botanical knowledge?
+6. ${ctx.dimension6Label}: ${ctx.dimension6Question}
 
 Also provide:
 - overallScore: weighted average of all dimensions
 - editorialNotes: array of 2-3 key editorial observations
-- recommendedSections: array of sections where this could be featured (e.g., "Homepage Featured", "Seasonal Highlights", "Garden Style Guides")
-- standfirst: A single-sentence magazine-quality standfirst
-- designInsights: Key design insights from the video (if any)
+- recommendedSections: array of sections where this could be featured (e.g., "${ctx.featuredSection}", "Seasonal Highlights", "In-Depth Analysis")
+- standfirst: A single-sentence editorial standfirst summarising why this video matters
+- designInsights: Key insights or strategic takeaways from the video (if any)
 
 Return as JSON:
 {
@@ -197,6 +236,7 @@ export async function assessEditorialQuality(
 
   const openai = new OpenAI({ apiKey: options.apiKey });
 
+  const ctx = getEditorialContext(input.vertical);
   const prompt = buildEditorialPrompt(input);
 
   try {
@@ -205,8 +245,7 @@ export async function assessEditorialQuality(
       messages: [
         {
           role: "system",
-          content:
-            "You are an editorial quality assessor for a premium gardening magazine. Evaluate content against Gardens Illustrated standards: warm, knowledgeable, design-focused, seasonally aware. Output JSON only.",
+          content: ctx.systemRole,
         },
         {
           role: "user",

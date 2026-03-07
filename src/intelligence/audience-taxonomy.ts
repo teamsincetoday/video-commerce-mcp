@@ -534,6 +534,422 @@ export function getHighValueSegments(
     .slice(0, limit);
 }
 
+// ============================================================================
+// STARTUP / TECH INTENT TAXONOMY
+// ============================================================================
+
+/**
+ * Startup & technology audience intent taxonomy.
+ *
+ * Seven archetypes covering the full spectrum of tech/startup viewer motivation:
+ * 1. trend_tracking    - Following AI/startup news (high commercial value)
+ * 2. skill_building    - Learning tools, frameworks, techniques
+ * 3. tool_adoption     - Direct intent to try or buy software/hardware
+ * 4. founder_vision    - Strategy, fundraising, company building
+ * 5. problem_solving   - Debugging, unblocking, architecture questions
+ * 6. community_sharing - Building in public, sharing wins and failures
+ * 7. market_thesis     - Open source, decentralization, industry trends
+ */
+export const STARTUP_INTENT_TAXONOMY: Record<string, AudienceIntent> = {
+  trend_tracking: {
+    name: "Trend Tracking",
+    description: "Viewers following breaking AI/startup news and market moves",
+    weight: 0.9,
+    examplePhrases: [
+      "this week",
+      "just announced",
+      "just launched",
+      "breaking",
+      "announced today",
+      "latest model",
+      "new release",
+      "just dropped",
+      "right now",
+      "this month",
+      "just happened",
+      "huge news",
+    ],
+    ctaSuggestions: [
+      "Subscribe for weekly AI briefings",
+      "Read the full breakdown",
+      "Follow for daily updates",
+      "Join the newsletter",
+      "Watch next week's episode",
+    ],
+    transactionExamples: [
+      "Subscribe to paid newsletter",
+      "Buy access to research report",
+      "Upgrade to pro tier for deeper analysis",
+    ],
+    dominantEmotions: ["curiosity", "excitement", "urgency"],
+    motivationProfile:
+      "User wants to stay ahead of the curve; values speed and signal-to-noise ratio",
+  },
+
+  skill_building: {
+    name: "Learning & Skill Building",
+    description: "Desire to learn tools, frameworks, or startup techniques",
+    weight: 0.8,
+    examplePhrases: [
+      "how to",
+      "step by step",
+      "tutorial",
+      "guide",
+      "learn",
+      "technique",
+      "method",
+      "show you how",
+      "demonstrate",
+      "best practice",
+      "from scratch",
+      "beginner",
+      "advanced",
+    ],
+    ctaSuggestions: [
+      "Watch full tutorial",
+      "Start free trial",
+      "Enroll in the course",
+      "Download the starter template",
+      "Access the documentation",
+    ],
+    transactionExamples: [
+      "Purchase online course",
+      "Subscribe to learning platform",
+      "Buy the book",
+      "Join mentorship program",
+    ],
+    dominantEmotions: ["curiosity", "confidence", "focus"],
+    motivationProfile:
+      "User is self-improving; responds to structured, expert-led education",
+  },
+
+  tool_adoption: {
+    name: "Tool Adoption",
+    description: "Direct intent to try, buy, or switch to a software tool",
+    weight: 1.0,
+    examplePhrases: [
+      "i use",
+      "we use",
+      "affiliate link",
+      "check the description",
+      "link below",
+      "try this",
+      "recommend",
+      "sign up",
+      "free trial",
+      "start for free",
+      "tool review",
+      "vs",
+      "compared to",
+      "switch to",
+    ],
+    ctaSuggestions: [
+      "Start free trial",
+      "Book a demo",
+      "Try it free",
+      "Compare plans",
+      "Get started in 5 minutes",
+    ],
+    transactionExamples: [
+      "Subscribe to SaaS tool",
+      "Purchase lifetime deal",
+      "Upgrade to paid plan",
+      "Buy hardware device",
+    ],
+    dominantEmotions: ["trust", "excitement", "decisiveness"],
+    motivationProfile:
+      "User is ready to act; needs a frictionless path from intent to trial",
+  },
+
+  founder_vision: {
+    name: "Founder Vision",
+    description: "Startup strategy, fundraising, company building, GTM",
+    weight: 0.7,
+    examplePhrases: [
+      "raise",
+      "series a",
+      "seed round",
+      "investors",
+      "pitch",
+      "founder",
+      "startup",
+      "product market fit",
+      "go to market",
+      "acquire customers",
+      "grow",
+      "scale",
+      "revenue",
+      "valuation",
+    ],
+    ctaSuggestions: [
+      "Read the founder playbook",
+      "Watch the fundraising episode",
+      "Join the founder community",
+      "Apply for the accelerator",
+      "Download the pitch deck template",
+    ],
+    transactionExamples: [
+      "Join accelerator program",
+      "Buy founder course",
+      "Hire a fractional advisor",
+      "Subscribe to founder newsletter",
+    ],
+    dominantEmotions: ["ambition", "focus", "determination"],
+    motivationProfile:
+      "User is building something; responds to practical frameworks and peer validation",
+  },
+
+  problem_solving: {
+    name: "Problem Solving",
+    description: "Debugging, architecture decisions, unblocking technical issues",
+    weight: 0.85,
+    examplePhrases: [
+      "fix",
+      "issue",
+      "problem",
+      "error",
+      "not working",
+      "broken",
+      "why is",
+      "how do i",
+      "debug",
+      "solve",
+      "workaround",
+      "alternative",
+      "instead",
+    ],
+    ctaSuggestions: [
+      "Read the docs",
+      "View quick fix",
+      "Open a GitHub issue",
+      "Get technical support",
+      "Join the Discord",
+    ],
+    transactionExamples: [
+      "Purchase support contract",
+      "Book technical consultation",
+      "Upgrade to plan with support",
+    ],
+    dominantEmotions: ["frustration", "urgency", "relief"],
+    motivationProfile:
+      "User is blocked; values fast, concrete solutions over comprehensive education",
+  },
+
+  community_sharing: {
+    name: "Community & Sharing",
+    description: "Building in public, sharing progress, engaging with peers",
+    weight: 0.5,
+    examplePhrases: [
+      "join us",
+      "community",
+      "comment below",
+      "let me know",
+      "subscribe",
+      "follow",
+      "share",
+      "together",
+      "your experience",
+      "what do you think",
+      "dm me",
+    ],
+    ctaSuggestions: [
+      "Join the community",
+      "Share your build",
+      "Subscribe for more",
+      "Follow for daily updates",
+      "Comment with your experience",
+    ],
+    transactionExamples: [
+      "Join paid community",
+      "Buy event ticket",
+      "Subscribe to Patreon",
+      "Buy branded merch",
+    ],
+    dominantEmotions: ["belonging", "pride", "enthusiasm"],
+    motivationProfile:
+      "User values connection and recognition; engagement converts over time",
+  },
+
+  market_thesis: {
+    name: "Market Thesis",
+    description: "Open source, decentralization, AI policy, long-term industry bets",
+    weight: 0.75,
+    examplePhrases: [
+      "open source",
+      "open claw",
+      "decentralized",
+      "regulation",
+      "policy",
+      "the future of",
+      "paradigm shift",
+      "disruption",
+      "moat",
+      "defensible",
+      "winner take all",
+      "platform risk",
+    ],
+    ctaSuggestions: [
+      "Read the full thesis",
+      "Subscribe for market analysis",
+      "Download the research report",
+      "Follow for investment insights",
+      "Join the analyst community",
+    ],
+    transactionExamples: [
+      "Subscribe to research platform",
+      "Buy investment newsletter",
+      "Join analyst network",
+      "Book strategy session",
+    ],
+    dominantEmotions: ["conviction", "curiosity", "strategic clarity"],
+    motivationProfile:
+      "User is thinking long-term; responds to rigorous frameworks and contrarian takes",
+  },
+};
+
+// ============================================================================
+// GENERIC INTENT TAXONOMY
+// ============================================================================
+
+/**
+ * Generic fallback taxonomy for unrecognized verticals.
+ * Uses neutral, universal phrases and CTAs that work across domains.
+ */
+export const GENERIC_INTENT_TAXONOMY: Record<string, AudienceIntent> = {
+  learning: {
+    name: "Learning & Mastery",
+    description: "Viewers seeking to learn something new",
+    weight: 0.8,
+    examplePhrases: [
+      "how to",
+      "tutorial",
+      "guide",
+      "learn",
+      "step by step",
+      "show you how",
+      "demonstration",
+      "tips",
+      "advice",
+      "technique",
+    ],
+    ctaSuggestions: [
+      "Watch full tutorial",
+      "Download the guide",
+      "Get started free",
+      "Access the documentation",
+    ],
+    transactionExamples: [
+      "Purchase course",
+      "Subscribe to platform",
+      "Buy related book",
+    ],
+    dominantEmotions: ["curiosity", "confidence"],
+    motivationProfile: "User wants to learn; values clarity and expertise",
+  },
+
+  purchase_intent: {
+    name: "Product Purchase",
+    description: "Direct intent to buy or try a product",
+    weight: 1.0,
+    examplePhrases: [
+      "i use",
+      "affiliate link",
+      "check the description",
+      "link below",
+      "recommend",
+      "try this",
+      "buy",
+      "order",
+      "sign up",
+    ],
+    ctaSuggestions: [
+      "Buy now",
+      "Start free trial",
+      "Get it here",
+      "Shop now",
+    ],
+    transactionExamples: [
+      "Purchase featured product",
+      "Subscribe to service",
+    ],
+    dominantEmotions: ["trust", "excitement"],
+    motivationProfile: "User is ready to convert; minimize friction",
+  },
+
+  community: {
+    name: "Community & Sharing",
+    description: "Social engagement and community participation",
+    weight: 0.5,
+    examplePhrases: [
+      "join us",
+      "community",
+      "subscribe",
+      "comment",
+      "follow",
+      "share",
+      "let me know",
+      "what do you think",
+    ],
+    ctaSuggestions: [
+      "Subscribe for more",
+      "Join the community",
+      "Share your experience",
+    ],
+    transactionExamples: [
+      "Join membership",
+      "Buy event ticket",
+    ],
+    dominantEmotions: ["belonging", "enthusiasm"],
+    motivationProfile: "User wants connection; engagement leads to conversion over time",
+  },
+};
+
+// ============================================================================
+// VERTICAL TAXONOMY RESOLVER
+// ============================================================================
+
+/**
+ * Returns the appropriate intent taxonomy for a given vertical ID.
+ *
+ * Maps detected vertical IDs to the right taxonomy so CTAs and intent
+ * labels are relevant to the content domain.
+ *
+ * @param verticalId - The detected vertical ID (e.g., "gardening", "technology", "startup")
+ * @returns The matching intent taxonomy
+ */
+export function getTaxonomyForVertical(
+  verticalId: string,
+): Record<string, AudienceIntent> {
+  const id = verticalId.toLowerCase();
+
+  // Gardening vertical
+  if (id === "gardening" || id === "garden") {
+    return GARDENING_INTENT_TAXONOMY;
+  }
+
+  // Startup / tech / AI verticals
+  if (
+    id === "startup" ||
+    id === "startups" ||
+    id === "technology" ||
+    id === "tech" ||
+    id === "ai" ||
+    id === "saas" ||
+    id === "crypto" ||
+    id === "cryptocurrency" ||
+    id === "software" ||
+    id === "developer" ||
+    id === "coding" ||
+    id === "fintech" ||
+    id === "blockchain"
+  ) {
+    return STARTUP_INTENT_TAXONOMY;
+  }
+
+  // Generic fallback
+  return GENERIC_INTENT_TAXONOMY;
+}
+
 /**
  * Export intent analysis as structured JSON string.
  *
