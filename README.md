@@ -231,6 +231,51 @@ Each vertical needs a domain dictionary, category keywords, and prompt tuning. T
 
 See `docs/verticals.md` for implementation details.
 
+## OpenClaw Integration
+
+Running OpenClaw for content production? Install this skill from ClawHub:
+
+```bash
+clawhub install video-commerce-intelligence
+```
+
+Or wire it directly via McPorter:
+
+```bash
+mcporter add video-commerce-mcp
+```
+
+### Content team workflows
+
+**After each episode drops:**
+
+> "Analyze this week's episode and give me affiliate links for the show notes: https://youtu.be/abc123"
+
+The agent calls `get_commercial_entities`, then `scan_affiliate_programs` for the top entities, and returns a formatted list ready to paste into your CMS.
+
+**Planning next episode:**
+
+> "What should we create next based on viewer demand in the startup tools space?"
+
+The agent calls `discover_content_gaps` + `track_category_lifecycle` and returns the top 3 opportunities ranked by demand score and competition level.
+
+**Seasonal calendar:**
+
+> "What's coming up in the next 90 days that our audience will care about?"
+
+The agent calls `get_seasonal_calendar` for your region and returns upcoming events with demand multipliers.
+
+### OpenClaw agent config (direct MCP wiring)
+
+```yaml
+mcpServers:
+  - name: video-commerce
+    command: npx video-commerce-mcp
+    env:
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+      MCP_API_KEYS: "${YOUR_API_KEY}"
+```
+
 ## Architecture
 
 ```

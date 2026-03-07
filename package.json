@@ -1,6 +1,6 @@
 {
   "name": "video-commerce-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Video Commerce Intelligence MCP Server - Extract commercial entities, score monetization, and discover market gaps from YouTube videos. Built for the agent-to-agent economy.",
   "type": "module",
   "license": "MIT",
