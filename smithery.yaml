@@ -1,0 +1,75 @@
+# Smithery listing for video-commerce-mcp
+# Place this as smithery.yaml in the package root before publishing to Smithery
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - openaiApiKey
+    properties:
+      openaiApiKey:
+        type: string
+        description: OpenAI API key for GPT-4o-mini entity extraction
+      x402Enabled:
+        type: boolean
+        description: Enable x402 micropayment enforcement (default false — uses free tier)
+        default: false
+      x402WalletAddress:
+        type: string
+        description: Your Base network wallet address for receiving USDC payments
+      apiKeys:
+        type: string
+        description: Comma-separated API keys for authenticated agent access
+      freeTierDailyLimit:
+        type: number
+        description: Free calls per agent per day (default 5)
+        default: 5
+  commandFunction: |-
+    (config) => ({
+      command: "npx",
+      args: ["video-commerce-mcp"],
+      env: {
+        OPENAI_API_KEY: config.openaiApiKey,
+        X402_ENABLED: config.x402Enabled ? "true" : "false",
+        X402_WALLET_ADDRESS: config.x402WalletAddress ?? "",
+        API_KEYS: config.apiKeys ?? "",
+        FREE_TIER_DAILY_LIMIT: String(config.freeTierDailyLimit ?? 5),
+      }
+    })
+
+# --- Smithery Marketplace Metadata ---
+# (These fields are configured via the Smithery web UI, not this file)
+# name: video-commerce-mcp
+# display_name: Video Commerce Intelligence
+# tagline: Commercial intelligence from YouTube videos — entities, monetization, audience, market gaps
+# description: |
+#   Give it a YouTube URL. It tells you everything commercially interesting about it.
+#
+#   12 MCP tools for video commerce intelligence:
+#   - Extract commercial entities with shoppability scores
+#   - Rank monetization strategies (affiliate, course, sponsored content)
+#   - Analyze audience intent across 7 archetypes
+#   - Discover content gaps competitors haven't filled
+#   - Score affiliate program fit across Awin, CJ, ShareASale
+#   - Assess channel authority (5-dimension scoring)
+#   - Track category lifecycle (emerging → growing → mature → declining)
+#   - Get regional commerce calendars with demand multipliers
+#
+#   Free tier: 5 calls/day. Paid: x402 micropayments in USDC on Base network.
+#
+# categories:
+#   - commerce
+#   - video-intelligence
+#   - affiliate-marketing
+#   - market-research
+#
+# pricing:
+#   model: freemium
+#   free_tier: 5 calls/day per agent
+#   paid_tier: $0.005–$0.05 per call (USDC via x402)
+#
+# links:
+#   npm: https://www.npmjs.com/package/video-commerce-mcp
+#   github: https://github.com/MyGardenShows/video-commerce-mcp
+#   homepage: https://sincetoday.com
