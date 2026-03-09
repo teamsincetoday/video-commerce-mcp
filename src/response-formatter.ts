@@ -367,7 +367,7 @@ function formatEntity(e: AnalysisEntity): ResponseEntity {
     is_shoppable: e.isShoppable,
     mentions: e.mentions.map((m) => ({
       timestamp_seconds: m.timestampSeconds,
-      context: m.context,
+      context: m.context.length > 150 ? m.context.slice(0, 150) + '…' : m.context,
     })),
   };
 
@@ -606,13 +606,14 @@ export function formatMonetizationResponse(
         ? ", seasonal buying window"
         : "";
 
+    const affiliateReasoning = `${shoppableEntities.length} shoppable entities${intentPart}${seasonPart}`;
     opportunities.push({
       strategy: "affiliate_commerce",
       score: roundTo(avgAffiliateScore, 2),
       entities_applicable: shoppableEntities.length,
       estimated_revenue_per_1k_views: estimatedRev,
       recommended_products: topProducts,
-      reasoning: `${shoppableEntities.length} shoppable entities${intentPart}${seasonPart}`,
+      reasoning: affiliateReasoning.length > 100 ? affiliateReasoning.slice(0, 100) + '…' : affiliateReasoning,
     });
   }
 
@@ -635,12 +636,13 @@ export function formatMonetizationResponse(
       2,
     );
 
+    const courseReasoning = `Teaching quality ${result.skills.quality.overallScore}/100, ${result.skills.primarySkill.skillLevel} level${hasProgression ? ", clear skill progression" : ""}`;
     opportunities.push({
       strategy: "course_creation",
       score: courseScore,
       skill_foundation: result.skills.primarySkill.name,
       prerequisite_coverage: prerequisiteCoverage,
-      reasoning: `Teaching quality ${result.skills.quality.overallScore}/100, ${result.skills.primarySkill.skillLevel} level${hasProgression ? ", clear skill progression" : ""}`,
+      reasoning: courseReasoning.length > 100 ? courseReasoning.slice(0, 100) + '…' : courseReasoning,
     });
   }
 
@@ -654,12 +656,13 @@ export function formatMonetizationResponse(
     const categorySet = new Set(entities.map((e) => e.category.toLowerCase()));
     const brandFitCategories = Array.from(categorySet).slice(0, 5);
 
+    const sponsoredReasoning = `Editorial quality ${result.quality.overallScore}/100, botanical literacy ${result.quality.botanicalLiteracy}/100, trusted editorial voice`;
     opportunities.push({
       strategy: "sponsored_content",
       score: sponsoredScore,
       brand_fit_categories:
         brandFitCategories.length > 0 ? brandFitCategories : undefined,
-      reasoning: `Editorial quality ${result.quality.overallScore}/100, botanical literacy ${result.quality.botanicalLiteracy}/100, trusted editorial voice`,
+      reasoning: sponsoredReasoning.length > 100 ? sponsoredReasoning.slice(0, 100) + '…' : sponsoredReasoning,
     });
   }
 
