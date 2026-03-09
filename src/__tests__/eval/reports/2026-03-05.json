@@ -1,0 +1,173 @@
+{
+  "timestamp": "2026-03-05T19:36:10.942Z",
+  "mode": "fixture",
+  "results": [
+    {
+      "caseId": "autumn-border-standard",
+      "caseName": "Autumn Border (Standard)",
+      "timestamp": "2026-03-05T19:36:10.938Z",
+      "mode": "fixture",
+      "scores": [
+        {
+          "dimension": "entity_recall",
+          "score": 100,
+          "target": 90,
+          "weight": 0.3,
+          "details": "Recall: 4/4 entities found (4/4 required). Total actual: 4",
+          "passed": true
+        },
+        {
+          "dimension": "specificity",
+          "score": 100,
+          "target": 70,
+          "weight": 0.15,
+          "details": "4/4 entities have genus+species (0 genus-only)",
+          "passed": true
+        },
+        {
+          "dimension": "monetization",
+          "score": 100,
+          "target": 80,
+          "weight": 0.2,
+          "details": "Commercial intent: 65 (expected band: 40-90) ✓",
+          "passed": true
+        },
+        {
+          "dimension": "stage_completion",
+          "score": 100,
+          "target": 95,
+          "weight": 0.2,
+          "details": "4/4 expected stages completed.",
+          "passed": true
+        },
+        {
+          "dimension": "cost",
+          "score": 99,
+          "target": 90,
+          "weight": 0.15,
+          "details": "Cost: $0.0010 / $0.0300 cap ✓",
+          "passed": true
+        }
+      ],
+      "overallScore": 100,
+      "passed": true,
+      "durationMs": 1
+    },
+    {
+      "caseId": "autumn-border-deep",
+      "caseName": "Autumn Border (Deep)",
+      "timestamp": "2026-03-05T19:36:10.940Z",
+      "mode": "fixture",
+      "scores": [
+        {
+          "dimension": "entity_recall",
+          "score": 100,
+          "target": 90,
+          "weight": 0.3,
+          "details": "Recall: 4/4 entities found (4/4 required). Total actual: 4",
+          "passed": true
+        },
+        {
+          "dimension": "specificity",
+          "score": 100,
+          "target": 70,
+          "weight": 0.15,
+          "details": "4/4 entities have genus+species (0 genus-only)",
+          "passed": true
+        },
+        {
+          "dimension": "monetization",
+          "score": 100,
+          "target": 80,
+          "weight": 0.2,
+          "details": "Commercial intent: 73 (expected band: 50-95) ✓",
+          "passed": true
+        },
+        {
+          "dimension": "stage_completion",
+          "score": 100,
+          "target": 95,
+          "weight": 0.2,
+          "details": "6/6 expected stages completed.",
+          "passed": true
+        },
+        {
+          "dimension": "cost",
+          "score": 100,
+          "target": 90,
+          "weight": 0.15,
+          "details": "Cost: $0.0010 / $0.0500 cap ✓",
+          "passed": true
+        }
+      ],
+      "overallScore": 100,
+      "passed": true,
+      "durationMs": 1
+    },
+    {
+      "caseId": "sponsor-only",
+      "caseName": "Sponsor Only",
+      "timestamp": "2026-03-05T19:36:10.941Z",
+      "mode": "fixture",
+      "scores": [
+        {
+          "dimension": "entity_recall",
+          "score": 100,
+          "target": 90,
+          "weight": 0.3,
+          "details": "No entities expected or found (correct)",
+          "passed": true
+        },
+        {
+          "dimension": "specificity",
+          "score": 100,
+          "target": 70,
+          "weight": 0.15,
+          "details": "No entities to evaluate",
+          "passed": true
+        },
+        {
+          "dimension": "monetization",
+          "score": 100,
+          "target": 80,
+          "weight": 0.2,
+          "details": "Commercial intent: 15 (expected band: 0-30) ✓",
+          "passed": true
+        },
+        {
+          "dimension": "stage_completion",
+          "score": 100,
+          "target": 95,
+          "weight": 0.2,
+          "details": "3/3 expected stages completed.",
+          "passed": true
+        },
+        {
+          "dimension": "cost",
+          "score": 98,
+          "target": 90,
+          "weight": 0.15,
+          "details": "Cost: $0.0010 / $0.0100 cap ✓",
+          "passed": true
+        }
+      ],
+      "overallScore": 100,
+      "passed": true,
+      "durationMs": 0
+    }
+  ],
+  "summary": {
+    "totalCases": 3,
+    "passed": 3,
+    "failed": 0,
+    "overallScore": 100,
+    "dimensionAverages": {
+      "entity_recall": 100,
+      "specificity": 100,
+      "monetization": 100,
+      "stage_completion": 100,
+      "cost": 99
+    }
+  },
+  "priorities": []
+}

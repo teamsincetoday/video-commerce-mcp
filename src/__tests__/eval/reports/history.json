@@ -1,0 +1,36 @@
+[
+  {
+    "timestamp": "2026-03-05T19:32:12.508Z",
+    "mode": "fixture",
+    "overallScore": 100,
+    "dimensionScores": {
+      "entity_recall": 100,
+      "specificity": 100,
+      "monetization": 100,
+      "stage_completion": 100,
+      "cost": 99
+    },
+    "caseResults": {
+      "autumn-border-standard": 100,
+      "autumn-border-deep": 100,
+      "sponsor-only": 100
+    }
+  },
+  {
+    "timestamp": "2026-03-05T19:36:10.942Z",
+    "mode": "fixture",
+    "overallScore": 100,
+    "dimensionScores": {
+      "entity_recall": 100,
+      "specificity": 100,
+      "monetization": 100,
+      "stage_completion": 100,
+      "cost": 99
+    },
+    "caseResults": {
+      "autumn-border-standard": 100,
+      "autumn-border-deep": 100,
+      "sponsor-only": 100
+    }
+  }
+]
