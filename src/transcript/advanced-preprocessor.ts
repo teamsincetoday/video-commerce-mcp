@@ -53,6 +53,7 @@ export const BOTANICAL_KEYWORDS = [
   "rosemary", "rosmarinus", "oregano", "origanum", "hosta", "hydrangea",
   "clematis", "geranium", "petunia", "dahlia", "tulip", "tulipa", "narcissus",
   "daffodil", "iris", "lily", "lilium", "peony", "paeonia", "delphinium",
+  "fern", "ferns", "palm", "bamboo", "moss", "grass", "grasses", "succulent", "cactus",
 
   // Gardening actions
   "plant", "planting", "prune", "pruning", "propagate", "propagating",
