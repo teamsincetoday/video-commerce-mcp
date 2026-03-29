@@ -14,6 +14,10 @@ import {
   analyzeTranscriptIntent,
   getHighValueSegments,
   GARDENING_INTENT_TAXONOMY,
+  STARTUP_INTENT_TAXONOMY,
+  GENERIC_INTENT_TAXONOMY,
+  getTaxonomyForVertical,
+  exportIntentAnalysis,
 } from "../../intelligence/audience-taxonomy.js";
 import { AUTUMN_BORDER_TRANSCRIPT_SEGMENTS } from "../fixtures/sample-transcript.js";
 
@@ -193,6 +197,76 @@ describe("Audience Taxonomy", () => {
     it("handles empty detections", () => {
       const topSegments = getHighValueSegments([]);
       expect(topSegments).toHaveLength(0);
+    });
+  });
+
+  describe("STARTUP_INTENT_TAXONOMY", () => {
+    it("has at least 5 startup intent archetypes", () => {
+      expect(Object.keys(STARTUP_INTENT_TAXONOMY).length).toBeGreaterThanOrEqual(5);
+    });
+
+    it("has trend_tracking archetype with weight 0.9", () => {
+      const tt = STARTUP_INTENT_TAXONOMY["trend_tracking"];
+      expect(tt).toBeDefined();
+      expect(tt!.weight).toBe(0.9);
+      expect(tt!.examplePhrases.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("GENERIC_INTENT_TAXONOMY", () => {
+    it("has at least 3 generic intent archetypes", () => {
+      expect(Object.keys(GENERIC_INTENT_TAXONOMY).length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("has learning archetype with 'how to' in examplePhrases", () => {
+      const learning = GENERIC_INTENT_TAXONOMY["learning"];
+      expect(learning).toBeDefined();
+      expect(learning!.examplePhrases).toContain("how to");
+    });
+  });
+
+  describe("getTaxonomyForVertical", () => {
+    it("routes 'gardening' to GARDENING_INTENT_TAXONOMY", () => {
+      expect(getTaxonomyForVertical("gardening")).toBe(GARDENING_INTENT_TAXONOMY);
+    });
+
+    it("routes 'garden' alias to GARDENING_INTENT_TAXONOMY", () => {
+      expect(getTaxonomyForVertical("garden")).toBe(GARDENING_INTENT_TAXONOMY);
+    });
+
+    it("routes 'startup' to STARTUP_INTENT_TAXONOMY", () => {
+      expect(getTaxonomyForVertical("startup")).toBe(STARTUP_INTENT_TAXONOMY);
+    });
+
+    it("routes 'tech' to STARTUP_INTENT_TAXONOMY", () => {
+      expect(getTaxonomyForVertical("tech")).toBe(STARTUP_INTENT_TAXONOMY);
+    });
+
+    it("routes 'AI' (uppercase) to STARTUP_INTENT_TAXONOMY via toLowerCase", () => {
+      expect(getTaxonomyForVertical("AI")).toBe(STARTUP_INTENT_TAXONOMY);
+    });
+
+    it("routes unknown vertical to GENERIC_INTENT_TAXONOMY", () => {
+      expect(getTaxonomyForVertical("cooking")).toBe(GENERIC_INTENT_TAXONOMY);
+    });
+  });
+
+  describe("exportIntentAnalysis", () => {
+    it("returns valid JSON with videoId", () => {
+      const analysis = analyzeTranscriptIntent([]);
+      const json = exportIntentAnalysis(analysis, "test-video-123");
+      const parsed = JSON.parse(json) as Record<string, unknown>;
+      expect(parsed["videoId"]).toBe("test-video-123");
+    });
+
+    it("output includes summary, highValueSegments, and allDetections", () => {
+      const analysis = analyzeTranscriptIntent([]);
+      const json = exportIntentAnalysis(analysis, "vid-456");
+      const parsed = JSON.parse(json) as Record<string, unknown>;
+      expect(parsed).toHaveProperty("summary");
+      expect(parsed).toHaveProperty("highValueSegments");
+      expect(parsed).toHaveProperty("allDetections");
+      expect(Array.isArray(parsed["allDetections"])).toBe(true);
     });
   });
 });
