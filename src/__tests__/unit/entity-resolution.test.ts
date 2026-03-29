@@ -68,6 +68,21 @@ describe("Entity Resolution", () => {
       expect(result.entity!.latinName).toBe("Lavandula angustifolia");
     });
 
+    it("resolves cultivar name 'Goldsturm' to parent species", () => {
+      const result = resolveEntityAdvanced("Goldsturm", dictionary);
+      expect(result.entity).not.toBeNull();
+      expect(result.entity!.latinName).toBe("Rudbeckia fulgida");
+      expect(result.matchType).toBe("synonym");
+      expect(result.confidence).toBeCloseTo(0.88, 2);
+    });
+
+    it("resolves cultivar with apostrophe (Sahin's Early Flowerer) to parent species", () => {
+      const result = resolveEntityAdvanced("Sahin's Early Flowerer", dictionary);
+      expect(result.entity).not.toBeNull();
+      expect(result.entity!.latinName).toBe("Helenium autumnale");
+      expect(result.matchType).toBe("synonym");
+    });
+
     it("resolves fuzzy match for close misspellings", () => {
       const result = resolveEntityAdvanced("Helenium autumale", dictionary);
       // Should match via fuzzy since it's one character off

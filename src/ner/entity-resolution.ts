@@ -65,6 +65,22 @@ export function resolveEntityAdvanced(
     }
   }
 
+  // Try cultivar/variety exact match (e.g. "Goldsturm" → Rudbeckia fulgida)
+  for (const plant of allPlants) {
+    if (plant.variety && normalizeQuery(plant.variety) === normalizedQuery) {
+      return createResult(plant, "synonym", 0.88, []);
+    }
+  }
+
+  // Try trade name exact match
+  for (const plant of allPlants) {
+    for (const tradeName of plant.tradeNames) {
+      if (normalizeQuery(tradeName) === normalizedQuery) {
+        return createResult(plant, "synonym", 0.85, []);
+      }
+    }
+  }
+
   // Try fuzzy matching
   const fuzzyMatches: Array<{ plant: PlantEntry; score: number }> = [];
 
@@ -80,11 +96,22 @@ export function resolveEntityAdvanced(
     }
 
     // Check common names
+    let pushed = false;
     for (const name of plant.commonNames) {
       const score = fuzzyMatch(normalizedQuery, name.toLowerCase());
       if (score >= fuzzyThreshold) {
         fuzzyMatches.push({ plant, score });
+        pushed = true;
         break;
+      }
+    }
+    if (pushed) continue;
+
+    // Check variety/cultivar name
+    if (plant.variety) {
+      const varietyScore = fuzzyMatch(normalizedQuery, normalizeQuery(plant.variety));
+      if (varietyScore >= fuzzyThreshold) {
+        fuzzyMatches.push({ plant, score: varietyScore * 0.95 });
       }
     }
   }
