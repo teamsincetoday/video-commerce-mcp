@@ -291,7 +291,7 @@ export interface PipelineMeta {
  * Convert a HH:MM:SS or MM:SS timestamp string to total seconds.
  * Returns 0 if the string is empty or malformed.
  */
-function timestampToSeconds(ts: string): number {
+export function timestampToSeconds(ts: string): number {
   if (!ts) return 0;
   const parts = ts.split(":").map(Number);
   if (parts.some(isNaN)) return 0;
@@ -309,7 +309,7 @@ function timestampToSeconds(ts: string): number {
  * Format: https://youtu.be/{videoId}?t={seconds}
  * Returns undefined if timestamp string is empty.
  */
-function buildTimestampUrl(videoId: string, ts: string): string | undefined {
+export function buildTimestampUrl(videoId: string, ts: string): string | undefined {
   if (!ts) return undefined;
   const seconds = timestampToSeconds(ts);
   return `https://youtu.be/${videoId}?t=${seconds}`;
