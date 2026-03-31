@@ -340,7 +340,7 @@ function registerTools(
   // ---- Tool 1: analyze_video ----
   server.tool(
     "analyze_video",
-    "Full commercial intelligence analysis of a YouTube video. Returns structured intelligence across up to six dimensions: entities, monetization, audience intent, quality, skills, and market position. The flagship analysis tool.",
+    "Full commercial intelligence analysis of a YouTube video across six dimensions: commercial entities, monetization opportunities, audience intent, editorial quality, skill progression, and seasonal market position. Use as your starting point for any video commerce workflow. For entity-only extraction at lower cost, use get_commercial_entities instead. For multiple videos, use batch_analyze. Limitations: YouTube URLs only (youtube.com/watch?v=... or youtu.be/...); non-YouTube URLs return INVALID_INPUT. Optimized for horticulture and gardening content — other categories return results with lower entity recognition confidence. Standard depth: 5–15s. Deep depth adds quality and design context (10–25s). Example: youtube_url='https://youtube.com/watch?v=VIDEO_ID' analysis_depth='standard' → {commercial_intent_score:0.82, entities:[{name:'Haws Deluxe watering can', category:'tool', confidence:0.91}], monetization:{strategies:[{type:'affiliate_commerce', revenue_estimate:180}]}}.",
     {
       youtube_url: z.string().describe("YouTube video URL to analyze"),
       analysis_depth: z
@@ -388,7 +388,7 @@ function registerTools(
   // ---- Tool 2: get_commercial_entities ----
   server.tool(
     "get_commercial_entities",
-    "Quick extraction of named entities with commercial categories from a YouTube video. Faster and cheaper than full analysis -- returns entities only, no monetization scoring or audience intent.",
+    "Fast entity-only extraction from a YouTube video — returns entity names, categories, confidence scores, and timestamp positions. Faster and cheaper than analyze_video when you only need the entity list. For monetization scoring, audience intent, or quality analysis, use analyze_video instead. Supported categories: plant, tool, material, seed, structure, book, course, service, event. Limitations: YouTube URLs only. Returns up to 30 entities; high-density content may omit lower-confidence items. Example: youtube.com/watch?v=VIDEO_ID with categories=['plant','tool'] → [{name:'Felco pruner', category:'tool', confidence:0.94, timestamp:'4:23'}].",
     {
       youtube_url: z.string().describe("YouTube video URL to extract entities from"),
       categories: z
@@ -450,7 +450,7 @@ function registerTools(
   // ---- Tool 3: get_monetization_opportunities ----
   server.tool(
     "get_monetization_opportunities",
-    "Ranked monetization strategies for a video — affiliate commerce, course creation, and sponsored content — each with revenue estimate, confidence score, and implementation steps.",
+    "Ranked monetization strategies for a YouTube video: affiliate commerce, course creation, and sponsored content. Each strategy includes a revenue estimate, confidence score, and concrete implementation steps. Use after analyze_video confirms a video has commercial potential. Limitations: YouTube URL required; analysis_id lookup is not yet implemented — provide youtube_url instead. Works best for how-to and product-focused content; entertainment-only videos typically return low monetization scores. Returns 3–8 strategies ordered by estimated revenue potential. Example: youtube_url='https://youtube.com/watch?v=VIDEO_ID' → {strategies:[{type:'affiliate_commerce', estimated_monthly_revenue:140, confidence:0.85, steps:['Add Fiskars affiliate links in description']}]}.",
     {
       youtube_url: z
         .string()
@@ -511,7 +511,7 @@ function registerTools(
   // ---- Tool 4: get_audience_insights ----
   server.tool(
     "get_audience_insights",
-    "Deep audience intent analysis using 7-archetype taxonomy. Returns what viewers want to do after watching (buy, learn, solve), with emotion mapping, commercial value scores, and recommended CTAs per segment.",
+    "Audience intent analysis using a 7-archetype taxonomy: buyer, learner, problem-solver, entertainer, researcher, inspirer, community-seeker. Returns dominant intent, per-archetype commercial value scores, emotion distribution, and recommended CTA copy per segment. Use when crafting conversion copy, selecting products to feature, or prioritizing content topics for a known audience. Limitations: YouTube URLs only. Requires sufficient transcript content — videos under 2 minutes may return low-confidence results. Intent is inferred from transcript and metadata, not from real YouTube Analytics data. Takes 5–15 seconds. Example: youtube.com/watch?v=VIDEO_ID → {dominant_intent:'buyer', total_commercial_value:0.81, intents:[{archetype:'buyer', commercial_value:0.88, recommended_cta:'Shop the tools used in this video'}]}.",
     {
       youtube_url: z.string().describe("YouTube video URL to analyze audience intent for"),
     },
@@ -550,7 +550,7 @@ function registerTools(
   // ---- Tool 5: discover_content_gaps ----
   server.tool(
     "discover_content_gaps",
-    "Market gap analysis for a topic or category. Returns content that viewers want but that doesn't exist yet, with demand scores, competition levels, and monetization angles. Cross-video analysis, not per-video.",
+    "Market gap analysis for a topic or category: identifies high-demand content that doesn't yet exist at scale, with demand scores, competition levels, and monetization angles. Use for editorial planning before producing new content — not for per-video analysis. For related-category exploration, use map_category_affinity instead. Limitations: uses seed data optimized for gardening and horticulture; other verticals return affinity-based gaps with lower specificity. Not connected to real-time YouTube search data. Example: category='autumn perennials' → gaps=[{topic:'Michaelmas daisy overwintering', demand_score:0.78, competition:'low'}].",
     {
       category: z
         .string()
@@ -600,7 +600,7 @@ function registerTools(
   // ---- Tool 6: batch_analyze ----
   server.tool(
     "batch_analyze",
-    "Analyze multiple YouTube videos (up to 10) in a single request. For agents building content strategies or competitive analyses. Optionally includes cross-video comparison of shared entities and complementary topics.",
+    "Analyze 1–10 YouTube videos in a single concurrent request — useful for content strategy audits, competitive analyses, and multi-episode product research. Each video is analyzed at the specified depth. With compare=true, adds a cross-video section showing shared entities across all videos. Limitations: YouTube URLs only; 1–10 per request (exceeding 10 returns INVALID_INPUT). Each video counts as one billable call. Individual failures do not abort the batch — failed videos return an error entry alongside successful results. Deep analysis on 10 videos can take 2–4 minutes. Example: 2 URLs compare=true → {total:2, completed:2, comparison:{shared_entities:[{name:'bypass pruners', appears_in:2}], videos_analyzed:2}}.",
     {
       youtube_urls: z
         .array(z.string())
@@ -696,7 +696,7 @@ function registerTools(
   // ---- Tool 7: discover_opportunities ----
   server.tool(
     "discover_opportunities",
-    "Find affiliate commerce opportunities where audience demand, commission rates, and channel authority converge. Returns ranked opportunities with invest_now / watch_closely / test_small / skip recommendations.",
+    "Find affiliate commerce opportunities where audience demand, commission rates, and channel authority converge for a vertical. Returns ranked opportunities scored on demand, margin, and authority — each labeled invest_now, watch_closely, test_small, or skip. Use to prioritize product categories before committing to a content campaign. For program-level details on a promising category, follow up with scan_affiliate_programs. Limitations: seed data is richest for the gardening vertical — other verticals (cooking, DIY) return results with lower specificity. Data is heuristic-based, not from live market feeds. Adjust min_score (0–1) to filter for higher-conviction opportunities only. Example: vertical='gardening' min_score=0.7 → [{category:'native perennials', convergence_score:0.81, recommendation:'invest_now', margin:'8-12%'}].",
     {
       vertical: z
         .string()
@@ -738,7 +738,7 @@ function registerTools(
   // ---- Tool 8: scan_affiliate_programs ----
   server.tool(
     "scan_affiliate_programs",
-    "Search affiliate networks (Awin, CJ, ShareASale, and others) for programs matching a category or vertical. Returns program details, commission rates, and relevance scores.",
+    "Search affiliate program metadata for a category or niche. Returns program names, commission rates, cookie durations, network, and relevance scores. Use to identify partnership candidates before producing commerce content for a topic. Important: returns curated seed data for Awin, CJ, ShareASale, and related networks — NOT a live call to affiliate network APIs. Data covers major programs accurately but may not reflect recent commission changes. Limitations: best coverage for horticulture and garden tools; other categories have sparser data. Use discover_opportunities first to identify high-potential categories, then scan here for specific programs. Example: category='garden tools' → [{name:'Fiskars', commission:'8%', network:'awin', score:0.91}].",
     {
       category: z
         .string()
@@ -772,7 +772,7 @@ function registerTools(
   // ---- Tool 9: assess_channel_authority ----
   server.tool(
     "assess_channel_authority",
-    "5-dimension channel authority scoring: reach, engagement, quality, trust, and commercial performance. Returns composite score and approval recommendation.",
+    "5-dimension authority scoring for a YouTube channel — reach, engagement quality, content quality, trust signals, and commercial performance — returning a composite score (0–1) and partnership recommendation (approve, review, or decline). Use to vet channels before sponsorship outreach or affiliate collaboration. Provide channel_id (e.g. 'UCxxxxxxxxx') or channel_url (e.g. 'https://youtube.com/@channelname'). Limitations: heuristic scoring based on channel signals and seed benchmarks — NOT a live YouTube Analytics API call. Scores are estimates, not verified metrics. If both channel_id and channel_url are provided, channel_id takes precedence. Example: channel_url='https://youtube.com/@gardenertom' → {composite_score:0.74, recommendation:'approve', dimensions:{reach:0.68, engagement_quality:0.79, trust_signals:0.81}}.",
     {
       channel_id: z
         .string()
@@ -814,7 +814,7 @@ function registerTools(
   // ---- Tool 10: map_category_affinity ----
   server.tool(
     "map_category_affinity",
-    "Cross-category relationship mapping. Given a category, returns related categories with affinity scores, relationship types, and expansion paths for cross-selling.",
+    "Cross-category relationship mapping: given a starting category, returns related categories with affinity scores (0–1), relationship types (complementary, sequential, substitute, seasonal-complement), and multi-hop expansion paths for cross-sell strategy. Use to find adjacent categories for content expansion or cross-sell opportunities for an existing audience. For lifecycle state, use track_category_lifecycle. For content gaps, use discover_content_gaps. Limitations: relationship data is seed-calibrated for horticulture — scores for unrelated verticals are less precise. Depth 1–5: higher depth discovers more distant connections but reduces confidence. Example: category='perennials' depth=2 → [{target:'bulbs', affinity:0.89, type:'seasonal-complement'}].",
     {
       category: z
         .string()
@@ -849,7 +849,7 @@ function registerTools(
   // ---- Tool 11: track_category_lifecycle ----
   server.tool(
     "track_category_lifecycle",
-    "Track the lifecycle state of a category: emerging, growing, mature, or declining. Returns current state, transition signals, and predicted next state with probability.",
+    "Tracks the demand lifecycle stage of a content category — emerging, growing, mature, or declining — with active transition signals and predicted next-state probability. Use for timing decisions: when to enter a category, when to double down, or when to pivot to an adjacent trend. Pair with map_category_affinity to find the adjacent emerging category and discover_opportunities for commercial scoring. Limitations: signals are derived from curated seed data, not real-time search trend APIs. Most accurate for gardening and horticulture; estimates for other verticals have lower confidence. Example: category='no-dig gardening' → {stage:'growing', signals:['rising search','new tools'], next_state:'mature', probability:0.72}.",
     {
       category: z
         .string()
@@ -872,7 +872,7 @@ function registerTools(
   // ---- Tool 12: get_seasonal_calendar ----
   server.tool(
     "get_seasonal_calendar",
-    "Region-specific commerce calendar with seasonal events, demand multipliers, and promotional timing intelligence. Returns upcoming events with category relevance and optimal pricing windows.",
+    "Region-specific commerce calendar for gardening and horticulture products, showing seasonal events, demand multipliers, and optimal promotion windows. Returns upcoming events with category relevance scores and recommended promotional timing. Use to align content publication and affiliate promotions with seasonal demand peaks. Supported regions: UK, US, NL, DE, AU — other codes fall back to UK data. Limitations: pre-seeded event data, not connected to live event feeds or real-time market signals. months_ahead accepts 1–12. Example: region='UK' months_ahead=3 → [{event:'RHS Chelsea Flower Show', date:'2026-05-19', demand_multiplier:2.1, promo_start:'2026-04-28'}].",
     {
       region: z
         .string()
