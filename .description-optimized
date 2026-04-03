@@ -1,0 +1,7 @@
+2026-04-03
+Descriptions optimized by Kai Sørensen.
+Audit: production/tool-description-audit-video-commerce-2026-04-03.md
+Changes: analyze_video (shortened+simplified), get_commercial_entities (removed enum from desc),
+  get_monetization_opportunities (removed unimplemented feature), batch_analyze (concrete scenarios first),
+  assess_channel_authority (param precedence moved to param docs).
+Tests: 643/643 passing post-change.

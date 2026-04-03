@@ -340,7 +340,7 @@ function registerTools(
   // ---- Tool 1: analyze_video ----
   server.tool(
     "analyze_video",
-    "Full commercial intelligence analysis of a YouTube video across six dimensions: commercial entities, monetization opportunities, audience intent, editorial quality, skill progression, and seasonal market position. Use as your starting point for any video commerce workflow. For entity-only extraction at lower cost, use get_commercial_entities instead. For multiple videos, use batch_analyze. Limitations: YouTube URLs only (youtube.com/watch?v=... or youtu.be/...); non-YouTube URLs return INVALID_INPUT. Optimized for horticulture and gardening content — other categories return results with lower entity recognition confidence. Standard depth: 5–15s. Deep depth adds quality and design context (10–25s). Example: youtube_url='https://youtube.com/watch?v=VIDEO_ID' analysis_depth='standard' → {commercial_intent_score:0.82, entities:[{name:'Haws Deluxe watering can', category:'tool', confidence:0.91}], monetization:{strategies:[{type:'affiliate_commerce', revenue_estimate:180}]}}.",
+    "Full commercial intelligence analysis of a YouTube video across 6 dimensions: entities, monetization, audience intent, quality, skills, and market position. Use as your entry point for any video commerce workflow. For entity-only extraction use get_commercial_entities (faster, cheaper). For multiple videos use batch_analyze. Optimized for horticulture and gardening; other verticals return lower entity confidence. Limitations: YouTube URLs only (youtube.com/watch?v=... or youtu.be/...); non-YouTube returns INVALID_INPUT. Standard: 5–15s. Deep adds quality and design context (10–25s). Example: youtube_url='https://youtu.be/abc123' → {commercial_intent_score:0.82, entities:[{name:'Haws watering can', category:'tool', confidence:0.91}], monetization:{strategies:[{type:'affiliate_commerce'}]}}.",
     {
       youtube_url: z.string().describe("YouTube video URL to analyze"),
       analysis_depth: z
@@ -388,7 +388,7 @@ function registerTools(
   // ---- Tool 2: get_commercial_entities ----
   server.tool(
     "get_commercial_entities",
-    "Fast entity-only extraction from a YouTube video — returns entity names, categories, confidence scores, and timestamp positions. Faster and cheaper than analyze_video when you only need the entity list. For monetization scoring, audience intent, or quality analysis, use analyze_video instead. Supported categories: plant, tool, material, seed, structure, book, course, service, event. Limitations: YouTube URLs only. Returns up to 30 entities; high-density content may omit lower-confidence items. Example: youtube.com/watch?v=VIDEO_ID with categories=['plant','tool'] → [{name:'Felco pruner', category:'tool', confidence:0.94, timestamp:'4:23'}].",
+    "Fast entity-only extraction from a YouTube video — returns entity names, categories, confidence scores, and timestamp positions. Use when you only need the entity list; faster and cheaper than analyze_video. For monetization scoring, audience intent, or quality analysis, use analyze_video instead. Limitations: YouTube URLs only. Returns up to 30 entities; high-density content may omit lower-confidence items. Category options are listed in the categories parameter. Example: youtube.com/watch?v=VIDEO_ID categories=['plant','tool'] → [{name:'Felco pruner', category:'tool', confidence:0.94, timestamp:'4:23'}].",
     {
       youtube_url: z.string().describe("YouTube video URL to extract entities from"),
       categories: z
@@ -450,7 +450,7 @@ function registerTools(
   // ---- Tool 3: get_monetization_opportunities ----
   server.tool(
     "get_monetization_opportunities",
-    "Ranked monetization strategies for a YouTube video: affiliate commerce, course creation, and sponsored content. Each strategy includes a revenue estimate, confidence score, and concrete implementation steps. Use after analyze_video confirms a video has commercial potential. Limitations: YouTube URL required; analysis_id lookup is not yet implemented — provide youtube_url instead. Works best for how-to and product-focused content; entertainment-only videos typically return low monetization scores. Returns 3–8 strategies ordered by estimated revenue potential. Example: youtube_url='https://youtube.com/watch?v=VIDEO_ID' → {strategies:[{type:'affiliate_commerce', estimated_monthly_revenue:140, confidence:0.85, steps:['Add Fiskars affiliate links in description']}]}.",
+    "Ranked monetization strategies for a YouTube video: affiliate commerce, course creation, and sponsored content. Each strategy includes a revenue estimate, confidence score, and concrete implementation steps. Use after analyze_video confirms commercial potential. Provide a YouTube URL. Works best for how-to and product-focused content; entertainment-only videos typically return low monetization scores. Returns 3–8 strategies ordered by estimated revenue potential. Example: youtube_url='https://youtube.com/watch?v=VIDEO_ID' → {strategies:[{type:'affiliate_commerce', estimated_monthly_revenue:140, confidence:0.85, steps:['Add Fiskars affiliate links in description']}]}.",
     {
       youtube_url: z
         .string()
@@ -600,7 +600,7 @@ function registerTools(
   // ---- Tool 6: batch_analyze ----
   server.tool(
     "batch_analyze",
-    "Analyze 1–10 YouTube videos in a single concurrent request — useful for content strategy audits, competitive analyses, and multi-episode product research. Each video is analyzed at the specified depth. With compare=true, adds a cross-video section showing shared entities across all videos. Limitations: YouTube URLs only; 1–10 per request (exceeding 10 returns INVALID_INPUT). Each video counts as one billable call. Individual failures do not abort the batch — failed videos return an error entry alongside successful results. Deep analysis on 10 videos can take 2–4 minutes. Example: 2 URLs compare=true → {total:2, completed:2, comparison:{shared_entities:[{name:'bypass pruners', appears_in:2}], videos_analyzed:2}}.",
+    "Analyze 1–10 YouTube videos concurrently. Set compare=true to get a cross-video section of shared entities — ideal for competitor audits, product bundle detection, and cross-episode topic analysis. Each video counts as one billable call; individual failures do not abort the batch. Limitations: YouTube URLs only; 1–10 per request (>10 returns INVALID_INPUT). Deep analysis on 10 videos can take 2–4 minutes. Example: 2 URLs compare=true → {total:2, completed:2, comparison:{shared_entities:[{name:'bypass pruners', appears_in:2}], videos_analyzed:2}}.",
     {
       youtube_urls: z
         .array(z.string())
@@ -772,13 +772,13 @@ function registerTools(
   // ---- Tool 9: assess_channel_authority ----
   server.tool(
     "assess_channel_authority",
-    "5-dimension authority scoring for a YouTube channel — reach, engagement quality, content quality, trust signals, and commercial performance — returning a composite score (0–1) and partnership recommendation (approve, review, or decline). Use to vet channels before sponsorship outreach or affiliate collaboration. Provide channel_id (e.g. 'UCxxxxxxxxx') or channel_url (e.g. 'https://youtube.com/@channelname'). Limitations: heuristic scoring based on channel signals and seed benchmarks — NOT a live YouTube Analytics API call. Scores are estimates, not verified metrics. If both channel_id and channel_url are provided, channel_id takes precedence. Example: channel_url='https://youtube.com/@gardenertom' → {composite_score:0.74, recommendation:'approve', dimensions:{reach:0.68, engagement_quality:0.79, trust_signals:0.81}}.",
+    "5-dimension authority scoring for a YouTube channel — reach, engagement quality, content quality, trust signals, and commercial performance — returning a composite score (0–1) and partnership recommendation (approve, review, or decline). Use to vet channels before sponsorship outreach or affiliate collaboration. Provide channel_id or channel_url. Limitations: heuristic scoring based on channel signals and seed benchmarks — NOT a live YouTube Analytics API call. Scores are estimates, not verified metrics. Example: channel_url='https://youtube.com/@gardenertom' → {composite_score:0.74, recommendation:'approve', dimensions:{reach:0.68, engagement_quality:0.79, trust_signals:0.81}}.",
     {
       channel_id: z
         .string()
         .optional()
         .describe(
-          "YouTube channel ID. Provide this OR channel_url, not both."
+          "YouTube channel ID (e.g. 'UCxxxxxxxxx'). Provide this OR channel_url. If both are provided, channel_id takes precedence."
         ),
       channel_url: z
         .string()
