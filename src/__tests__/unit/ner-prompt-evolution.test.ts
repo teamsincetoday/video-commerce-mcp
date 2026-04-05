@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   getDefaultPrompt,
   getActivePromptVersion,
@@ -90,5 +90,72 @@ describe("comparePromptVersions", () => {
   });
   it("returns tie for identical metrics", () => {
     expect(comparePromptVersions("A", good, "B", good).winner).toBe("tie");
+  });
+  it("tie recommendation mentions 'Continue A/B testing'", () => {
+    const result = comparePromptVersions("A", good, "B", good);
+    expect(result.recommendation).toContain("Continue A/B testing");
+  });
+  it("winner recommendation contains '%' improvement percentage", () => {
+    const result = comparePromptVersions("A", good, "B", bad);
+    expect(result.recommendation).toContain("%");
+    expect(result.recommendation).toContain("A");
+  });
+});
+
+describe("analyzePromptPerformance — correction rate paths", () => {
+  it("detects high_correction_rate weakness (>10%)", () => {
+    // 15/100 corrections = 15% correction rate → weakness
+    const result = analyzePromptPerformance(version("v1", 100), fiveOf(100, 5, 15, 0.85));
+    expect(result!.weaknesses).toContain("high_correction_rate");
+  });
+  it("detects low_correction_rate strength (<3%)", () => {
+    // 2/100 corrections = 2% correction rate → strength
+    const result = analyzePromptPerformance(version("v1", 100), fiveOf(100, 2, 2, 0.85));
+    expect(result!.strengths).toContain("low_correction_rate");
+  });
+});
+
+describe("getActivePromptVersion — A/B traffic selection", () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it("selects highest-traffic version when random falls in its range", () => {
+    // versions sorted descending: v2(80%), v1(20%)
+    // Math.random() = 0.5 → random = 50 → 50 <= 80 → v2 selected
+    vi.spyOn(Math, "random").mockReturnValueOnce(0.5);
+    const result = getActivePromptVersion([version("v1", 20), version("v2", 80)]);
+    expect(result.version).toBe("v2");
+  });
+
+  it("selects lower-traffic version when random exceeds highest band", () => {
+    // versions sorted descending: v2(80%), v1(20%)
+    // Math.random() = 0.9 → random = 90 → 90 > 80 → cumulative 100 → v1 selected
+    vi.spyOn(Math, "random").mockReturnValueOnce(0.9);
+    const result = getActivePromptVersion([version("v1", 20), version("v2", 80)]);
+    expect(result.version).toBe("v1");
+  });
+
+  it("fallback to first eligible when random exceeds total traffic", () => {
+    // Only v1 at 50% traffic — if random > 50, loop exits, fallback = v1
+    vi.spyOn(Math, "random").mockReturnValueOnce(0.99);
+    const result = getActivePromptVersion([version("v1", 50)]);
+    expect(result.version).toBe("v1");
+  });
+});
+
+describe("createPromptVersion — custom params", () => {
+  it("respects custom temperature, maxTokens, trafficPercentage", () => {
+    const v = createPromptVersion({
+      version: "v3",
+      promptTemplate: "t",
+      systemMessage: "s",
+      changeDescription: "c",
+      focusAreas: [],
+      temperature: 0.1,
+      maxTokens: 2000,
+      trafficPercentage: 50,
+    });
+    expect(v.temperature).toBe(0.1);
+    expect(v.maxTokens).toBe(2000);
+    expect(v.trafficPercentage).toBe(50);
   });
 });
