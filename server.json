@@ -1,0 +1,36 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.teamsincetoday/video-commerce-mcp",
+  "description": "YouTube commerce intelligence: extract products, brands, affiliate signals. Free tier 200/day.",
+  "repository": {
+    "url": "https://github.com/teamsincetoday/video-commerce-mcp",
+    "source": "github"
+  },
+  "version": "0.2.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "video-commerce-mcp",
+      "version": "0.2.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "OPENAI_API_KEY",
+          "description": "OpenAI API key for GPT-4o-mini product extraction (required)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "MCP_API_KEYS",
+          "description": "Comma-separated paid API keys for unlimited calls (optional — omit for free tier: 200 calls/day)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
